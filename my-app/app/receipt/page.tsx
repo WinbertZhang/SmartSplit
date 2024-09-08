@@ -69,20 +69,43 @@ export default function ReceiptPage() {
     setLoading(true);
     setPanelOpen(true); // Open the side panel when image is uploaded
 
-    // Mock data to simulate receipt items instead of calling an API
-    const mockReceiptData: ReceiptData = {
-      items: [
-        { id: 1, item: "Bounty Paper Towels", price: 2.99, split: false },
-        { id: 2, item: "Organic Bananas", price: 1.5, split: false },
-        { id: 3, item: "Milk", price: 3.49, split: false },
-        { id: 4, item: "Bread", price: 2.29, split: false },
-      ],
-    };
-
-    // Simulate a delay to mock API call processing time
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    setReceiptData(mockReceiptData);
+    const formData = new FormData();
+    formData.append('image', uploadedImage);
+    formData.append(
+      'prompt',
+      'Please return a JSON block with all the items and their prices in this format: { "ItemName": "$Price" }'
+    );
+  
+    // Send the image and prompt to the Next.js API route
+    try {
+      const res = await fetch('/api/gemini-parse', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      if (res.ok) {
+        const jsonResponse = await res.json();
+        
+        // Assuming the response is in this format: "{\"PRODUCE 4640\": \"$3.98\"}"
+        const parsedData = JSON.parse(jsonResponse.text);
+        
+        // Convert object to array of items
+        const itemsArray: ReceiptItem[] = Object.entries(parsedData).map(
+          ([itemName, itemPrice], index) => ({
+            id: index + 1, // Add a unique id for each item
+            item: itemName,
+            price: parseFloat(itemPrice.replace(/[^\d.]/g, '')), // Clean the price
+          })
+        );
+  
+        setReceiptData({ items: itemsArray }); // Set receipt data as an array of items
+      } else {
+        console.error('Failed to process the receipt');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  
     setLoading(false);
   };
 
