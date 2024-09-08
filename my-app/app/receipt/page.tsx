@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import UploadButton from '@/components/uploadButton';
-import ReceiptTable from '@/components/receiptTable';
-import Image from 'next/image';
+import { useState } from "react";
+import UploadButton from "@/components/uploadButton";
+import ReceiptTable from "@/components/receiptTable";
+import Image from "next/image";
 
 // Define the structure of a receipt item with `id`
 interface ReceiptItem {
@@ -25,47 +25,61 @@ export default function ReceiptPage() {
   const handleImageUpload = async (uploadedImage: File) => {
     setImageURL(URL.createObjectURL(uploadedImage)); // Create a temporary URL for the image preview
     setLoading(true);
-  
+
+    // Mock data to simulate receipt items instead of calling Gemini API
+    const mockReceiptData: ReceiptData = {
+      items: [
+        { id: 1, item: "Bounty Paper Towels", price: 2.99 },
+        { id: 2, item: "Organic Bananas", price: 1.5 },
+        { id: 3, item: "Milk", price: 3.49 },
+        { id: 4, item: "Bread", price: 2.29 },
+      ],
+    };
+
+    // Simulate a delay to mock API call processing time
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Instead of calling the API, set the fake receipt data
+    setReceiptData(mockReceiptData);
+
+    // Commenting out the actual API request part
+    /*
     const formData = new FormData();
     formData.append('image', uploadedImage);
     formData.append(
       'prompt',
       'Please return a JSON block with all the items and their prices in this format: { "ItemName": "$Price" }'
     );
-  
-    // Send the image and prompt to the Next.js API route
+
     try {
       const res = await fetch('/api/gemini-parse', {
         method: 'POST',
         body: formData,
       });
-  
+
       if (res.ok) {
         const jsonResponse = await res.json();
-        
-        // Assuming the response is in this format: "{\"PRODUCE 4640\": \"$3.98\"}"
         const parsedData = JSON.parse(jsonResponse.text);
-        
-        // Convert object to array of items
+
         const itemsArray: ReceiptItem[] = Object.entries(parsedData).map(
           ([itemName, itemPrice], index) => ({
-            id: index + 1, // Add a unique id for each item
+            id: index + 1,
             item: itemName,
-            price: parseFloat(itemPrice.replace(/[^\d.]/g, '')), // Clean the price
+            price: parseFloat(itemPrice.replace(/[^\d.]/g, '')),
           })
         );
-  
-        setReceiptData({ items: itemsArray }); // Set receipt data as an array of items
+
+        setReceiptData({ items: itemsArray });
       } else {
         console.error('Failed to process the receipt');
       }
     } catch (error) {
       console.error('Error:', error);
     }
-  
+    */
+
     setLoading(false);
   };
-
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
