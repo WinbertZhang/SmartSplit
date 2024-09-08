@@ -29,7 +29,7 @@ export default function UploadButton({ onUpload }: UploadButtonProps) {
       />
       <button
         onClick={handleClick}
-        className="bg-orangeCustom text-white px-4 py-2 rounded-md"
+        className="bg-[#353B47] text-white px-4 py-2 hover:bg-[#4A4F5C] rounded-md"
       >
         Upload Image
       </button>

@@ -27,26 +27,26 @@ function ReceiptTable({
   onToggleSplit: (id: number) => void;
 }) {
   return (
-    <div className="rounded-lg shadow-lg overflow-hidden bg-white">
-      <table className="min-w-full bg-white rounded-lg">
+    <div className="rounded-lg shadow-lg overflow-hidden bg-[#353B47]">
+      <table className="min-w-full text-white">
         <thead>
-          <tr className="bg-yellow-100">
-            <th className="py-3 px-4 text-left font-medium text-gray-700">Item</th>
-            <th className="py-3 px-4 text-left font-medium text-gray-700">Price</th>
-            <th className="py-3 px-4 text-center font-medium text-gray-700">Split?</th>
+          <tr className="bg-[#1A2535]">
+            <th className="py-3 px-4 text-left font-medium text-white">Item</th>
+            <th className="py-3 px-4 text-left font-medium text-white">Price</th>
+            <th className="py-3 px-4 text-center font-medium text-white">Split?</th>
           </tr>
         </thead>
         <tbody>
           {receiptItems.map((item) => (
-            <tr key={item.id} className="border-t border-gray-200 hover:bg-yellow-50">
-              <td className="py-3 px-4 text-gray-800">{item.item}</td>
-              <td className="py-3 px-4 text-gray-800">${item.price.toFixed(2)}</td>
+            <tr key={item.id} className="border-t border-gray-600 hover:bg-[#4A4F5C]">
+              <td className="py-3 px-4">{item.item}</td>
+              <td className="py-3 px-4">${item.price.toFixed(2)}</td>
               <td className="py-3 px-4 text-center">
                 <input
                   type="checkbox"
                   checked={item.split}
                   onChange={() => onToggleSplit(item.id)}
-                  className="w-5 h-5 text-orange-600 border-orange-300 rounded"
+                  className="w-5 h-5 text-[#35B2EB] border-[#35B2EB] rounded"
                 />
               </td>
             </tr>
@@ -62,7 +62,7 @@ export default function ReceiptPage() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null); // Use ReceiptData type
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false); // Track if the panel is open
-  const router = useRouter(); // Correct import
+  const router = useRouter();
 
   const handleImageUpload = async (uploadedImage: File) => {
     setImageURL(URL.createObjectURL(uploadedImage)); // Create a temporary URL for the image preview
@@ -106,19 +106,11 @@ export default function ReceiptPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-orange-100 via-yellow-100 to-orange-50 p-6 relative">
+    <div className="min-h-screen bg-[#0F172A] p-6 relative">
       {/* Upload Receipt Section */}
-      <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md text-center">
-        {/* Gradient Banner for Upload Receipt */}
-        <div
-          className="p-4 text-white text-2xl font-bold"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right top, #ff914d, #ffa44b, #ffb74c, #ffcb50, #ffde59)",
-          }}
-        >
-          Upload Receipt
-        </div>
+      <div className="max-w-2xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
+        {/* Title */}
+        <h2 className="text-white text-2xl font-bold mb-6">Upload Receipt</h2>
 
         <div className="my-6">
           {/* Upload Button Centered */}
@@ -129,10 +121,10 @@ export default function ReceiptPage() {
           {/* Show the image preview if available */}
           {imageURL && (
             <div className="my-6">
-              <h2 className="text-xl font-semibold mb-4 text-orange-600">Uploaded Receipt:</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Uploaded Receipt:</h2>
               <Image
                 src={imageURL}
-                alt="Uploaded receipt"
+                alt="Uploaded Receipt"
                 width={400}
                 height={400}
                 className="rounded-lg mx-auto"
@@ -144,36 +136,28 @@ export default function ReceiptPage() {
 
       {/* Side Panel */}
       <div
-        className={`fixed top-0 right-0 w-96 h-full bg-white shadow-lg transition-transform transform ${
+        className={`fixed top-0 right-0 w-96 h-full bg-[#212C40] shadow-lg border-l border-gray-700 transition-transform transform ${
           panelOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* Gradient Banner for Side Panel */}
-        <div
-          className="p-4 text-white text-xl font-semibold"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right top, #ff914d, #ffa44b, #ffb74c, #ffcb50, #ffde59)",
-          }}
-        >
+        <div className="p-4 bg-[#1A2535] text-white text-xl font-semibold">
           Receipt Items
         </div>
 
         <div className="p-6">
           {loading ? (
-            <p className="text-gray-700">Processing your receipt. Please wait...</p>
+            <p className="text-gray-400">Processing your receipt. Please wait...</p>
           ) : (
             receiptData && (
               <ReceiptTable receiptItems={receiptData.items} onToggleSplit={toggleSplit} />
             )
           )}
         </div>
-        {/* Submit Button inside the side panel */}
         {!loading && receiptData && (
           <div className="p-6">
             <button
               onClick={handleSubmit}
-              className="w-full bg-orange-500 text-white px-6 py-3 text-lg font-semibold rounded-lg hover:bg-orange-600 transition-all shadow-lg"
+              className="w-full bg-[#353B47] text-white px-6 py-3 text-lg font-semibold rounded-lg hover:bg-[#4A4F5C] transition-all shadow-lg"
             >
               Submit
             </button>

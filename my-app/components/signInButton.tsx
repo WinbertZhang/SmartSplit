@@ -9,10 +9,13 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebaseConfig'; // Firebase auth config
+import { useRouter } from "next/navigation";
+
 
 const googleProvider = new GoogleAuthProvider();
 
 export default function SignInButton() {
+  const router = useRouter();
   const [user, setUser] = useState<FirebaseUser | null>(null);
 
   // Listen for authentication state changes
@@ -29,9 +32,10 @@ export default function SignInButton() {
   }, []);
 
   // Sign-in function
-  const handleSignIn = async (): Promise<void> => {
+  const handleSignIn = async (): Promise<void> => {  
     try {
       await signInWithPopup(auth, googleProvider);
+      router.push('/dashboard'); // Redirect to /dashboard after successful sign-in
     } catch (error) {
       console.error('Error signing in:', error);
     }
