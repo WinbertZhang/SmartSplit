@@ -2,9 +2,36 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth";
+import { auth } from "@/lib/firebaseConfig"; // Firebase config
+import SignInButton from "@/components/signInButton"; // Reuse the SignInButton component
 
 export default function Dashboard() {
-  const userName = "John Doe"; // Example user
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+
+  // Listen for authentication state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user); // Set the authenticated user
+      } else {
+        setUser(null); // Clear the user if logged out
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Sign-out function
+  const handleSignOut = async (): Promise<void> => {
+    try {
+      await signOut(auth);
+      console.log("User signed out successfully");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -21,9 +48,22 @@ export default function Dashboard() {
           <div className="flex items-center">
             <Image alt="logo" src="/smartsplitlogotext.png" width={100} height={100} />
           </div>
-          {/* User Account */}
+
+          {/* User Account - Show Sign Out Button if User is Logged In */}
           <div className="text-white text-lg font-semibold">
-            {userName}
+            {user ? (
+              <div className="flex items-center">
+                <p className="mr-4">Welcome, {user.displayName}!</p>
+                <button
+                  onClick={handleSignOut}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <SignInButton /> // Show Sign In button if no user is logged in
+            )}
           </div>
         </div>
       </div>
