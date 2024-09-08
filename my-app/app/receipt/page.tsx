@@ -30,7 +30,7 @@ export default function ReceiptPage() {
     formData.append('image', uploadedImage);
     formData.append(
       'prompt',
-      'Please return a JSON block with all the items and their prices in this format: { "Bounty Paper Towels": "$2.99", "Organic Bananas": "$1.50" }'
+      'Please return a JSON block with all the items and their prices in this format: { "ItemName": "$Price" }'
     );
   
     // Send the image and prompt to the Next.js API route
