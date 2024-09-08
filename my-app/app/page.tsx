@@ -5,23 +5,15 @@ import Image from "next/image";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#0F172A] flex flex-col">
+    <div className="min-h-screen bg-customBlue flex flex-col">
       {/* Blob 1: Top-middle, slightly down and left */}
-  {/* <div className="absolute top-1/4 left-1/2 transform -translate-x-2/3 -translate-y-1/4 w-[800px] h-[600px] bg-gradient-to-r from-blue-600 to-purple-700 rounded-full opacity-10 blur-3xl"></div> */}
-  
-  {/* Blob 2: Long oval blob, angled to point bottom right, coming from top */}
-  {/* <div className="absolute top-0 left-3/4 transform -translate-x-1/2 -translate-y-1/4 rotate-[30deg] w-[800px] h-[250px] bg-gradient-to-br from-blue-600 to-purple-700 opacity-10 blur-3xl"></div> */}
+      <div className="absolute top-1/4 left-1/2 transform -translate-x-2/3 -translate-y-1/4 w-[800px] h-[600px] bg-gradient-to-r from-blue-600 to-purple-700 rounded-full opacity-20 blur-3xl z-0"></div>
 
-      {/* Header with Logo */}
-      <header className="w-full p-2 flex items-center border-b border-gray-700">
-        {/* Logo on the top left */}
-        <div className="flex items-center ml-4">
-          <Image alt="logo" src="/smartsplitlogotext.png" width={100} height={100} />
-        </div>
-      </header>
+      {/* Blob 2: Long oval blob, angled to point bottom right, coming from top */}
+      <div className="absolute bottom-0 left-3/4 transform -translate-x-1/2  rotate-[60deg] w-[1000px] h-[550px] bg-gradient-to-br from-blue-600 to-purple-700 opacity-20 blur-3xl z-0"></div>
 
       {/* Main Content */}
-      <div className="flex-grow flex flex-col items-center justify-center text-center space-y-8 max-w-screen-lg mx-auto">
+      <div className="flex-grow flex flex-col items-center justify-center text-center space-y-8 max-w-screen-lg mx-auto relative z-10">
         {/* Title */}
         <h1 className="text-white text-[2.5rem] leading-none sm:text-6xl tracking-tight font-bold mt-8 mb-8">
           Welcome to Smart Split

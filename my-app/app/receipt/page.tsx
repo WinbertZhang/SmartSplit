@@ -129,7 +129,7 @@ export default function ReceiptPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F172A] p-6 relative">
+    <div className="min-h-screen bg-customBlue p-6 relative">
       {/* Upload Receipt Section */}
       <div className="max-w-2xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
         {/* Title */}

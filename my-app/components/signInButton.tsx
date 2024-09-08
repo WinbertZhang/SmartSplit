@@ -9,8 +9,8 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebaseConfig'; // Firebase auth config
+import { FaGoogle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -66,9 +66,9 @@ export default function SignInButton() {
       ) : (
         <button
           onClick={handleSignIn}
-          className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+          className="bg-gray-100 text-white px-4 py-2 rounded-lg flex items-center justify-center"
         >
-          Sign in with Google
+          <FaGoogle className="mr-2" /> Log In
         </button>
       )}
     </div>
