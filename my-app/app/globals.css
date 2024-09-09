@@ -5,3 +5,22 @@
 body {
     background-color: #0F172A;
 }
+
+
+@keyframes gradientMove {
+    0% {
+      background-position: 50% 50%; /* Start from the center */
+    }
+    50% {
+      background-position: 75% 50%; /* Move 25% to the right */
+    }
+    100% {
+      background-position: 50% 50%; /* Return to the center */
+    }
+  }
+  
+  .animate-gradientMove {
+    background-size: 200% 200%; /* Keep this so the gradient can move smoothly */
+    animation: gradientMove 10s ease infinite; /* Adjust speed and looping */
+  }
+  

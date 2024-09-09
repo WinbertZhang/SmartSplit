@@ -63,7 +63,7 @@ export default function NavBar() {
             {navLinks.map((link) => (
               <li
                 key={link.href}
-                className="text-white text-md tracking-wider hover:text-[#35B2EB] transition-all list-none"
+                className="text-white text-md tracking-wider hover:text-green-400 transition-all list-none"
               >
                 <Link href={link.href}>{link.name}</Link>
               </li>
@@ -72,14 +72,14 @@ export default function NavBar() {
             <div className="w-[1px] h-10 bg-gray-600"></div>
 
           {/* User Account - Show Sign Out Button if User is Logged In */}
-          <div className="text-white text-md tracking-wider flex items-center space-x-4">
+          <div className="text-green-400 text-md tracking-wider flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
                 <p>Welcome, {user.displayName?.split(" ")[0]}!</p>{" "}
                 {/* Display first name */}
                 <button
                   onClick={handleSignOut}
-                  className="bg-[#212C40] text-white px-4 py-2 rounded-lg hover:bg-[#1A2535] flex items-center transition-colors duration-200"
+                  className="bg-[#212C40] text-green-400 px-4 py-2 rounded-lg hover:bg-[#1A2535] flex items-center transition-colors duration-200"
                 >
                   <FiLogOut className="mr-2" /> {/* Icon for logging out */}
                   Sign Out

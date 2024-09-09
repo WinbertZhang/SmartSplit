@@ -60,7 +60,7 @@ export default function SignInButton() {
         {/* Display first name */}
         <button
           onClick={handleSignOut}
-          className="bg-[#212C40] text-white px-4 py-2 rounded-lg hover:bg-[#1A2535] flex items-center transition-colors duration-200"
+          className="bg-[#212C40] text-green-400 px-4 py-2 rounded-lg hover:bg-[#1A2535] flex items-center transition-colors duration-200"
         >
           <FiLogOut className="mr-2" /> {/* Icon for logging out */}
           Sign Out
@@ -69,7 +69,7 @@ export default function SignInButton() {
       ) : (
         <button
           onClick={handleSignIn}
-          className=" text-white px-4 py-2 rounded-lg flex items-center justify-center border-white border-[1px] hover:bg-gray-800"
+          className=" text-green-400 px-4 py-2 rounded-lg flex items-center justify-center border-green-400 border-[1px] hover:bg-gray-800"
         >
           <FaGoogle className="mr-2" /> Log In
         </button>
