@@ -36,7 +36,7 @@ export default function SignInButton() {
   const handleSignIn = async (): Promise<void> => {  
     try {
       await signInWithPopup(auth, googleProvider);
-      router.push('/dashboard'); // Redirect to /dashboard after successful sign-in
+      router.push('/'); // Redirect to /dashboard after successful sign-in
     } catch (error) {
       console.error('Error signing in:', error);
     }

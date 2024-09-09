@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { createGroup } from "@/lib/firestoreUtils"; // Firestore utility for creating groups
 import { auth } from "@/lib/firebaseConfig";
-import { useRouter } from "next/navigation"; // For routing
 import { sendGroupInvitation } from "@/lib/emailUtil"; // Email service for sending invitations
 
 // Define the component
@@ -11,7 +10,6 @@ export default function CreateGroup() {
   const [groupName, setGroupName] = useState<string>(""); // Track group name
   const [memberEmails, setMemberEmails] = useState<string[]>([]); // Track list of member emails
   const [newMemberEmail, setNewMemberEmail] = useState<string>(""); // Track new email input
-  const router = useRouter();
 
   // Function to add a new member email to the list
   const handleAddMember = () => {
@@ -30,17 +28,24 @@ export default function CreateGroup() {
 
       // Add the admin's UID to the members list and remove duplicates
       const memberUids: string[] = [adminId]; // The group creator is always a member
-      const groupId = await createGroup(groupName, adminId, memberUids); // Create group with admin as a member
-      
-      // Send invitation emails to all added members
-      await Promise.all(
-        memberEmails.map(async (email) => {
-          await sendGroupInvitation(email, groupId); // Call the email service to send invitations
-        })
-      );
+      try {
+        // Create group with admin as a member and get the groupId
+        const groupId = await createGroup(groupName, adminId, memberUids);
 
-      // Redirect to the dashboard after successful group creation
-      router.push(`/dashboard?groupId=${groupId}`);
+        if (!groupId) {
+          throw new Error("Failed to create group. Group ID is missing.");
+        }
+
+        // Send invitation emails to all added members
+        await Promise.all(
+          memberEmails.map(async (email) => {
+            await sendGroupInvitation(email, groupId); // Call the email service to send invitations
+          })
+        );
+      } catch (error) {
+        console.error("Error creating group:", error);
+        alert("An error occurred while creating the group. Please try again.");
+      }
     }
   };
 

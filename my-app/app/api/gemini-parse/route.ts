@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { jsonrepair } from 'jsonrepair';
 
 // Check if the API key is present and throw an error if not
 const apiKey = process.env.GOOGLE_API_KEY;
@@ -20,13 +21,24 @@ function fileToGenerativePart(base64Data: string, mimeType: string) {
   };
 }
 
+function sanitizeJSONResponse(jsonString: string) {
+  try {
+    const repairedJson = jsonrepair(jsonString);
+    const jsonObject = JSON.parse(repairedJson);
+    return jsonObject;
+  } catch (error) {
+    console.error('Error parsing JSON:', error);
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const imageFile = formData.get('image') as File;
-    const prompt = formData.get('prompt') as string;
+    const initialPrompt = formData.get('prompt') as string;
 
-    if (!imageFile || !prompt) {
+    if (!imageFile || !initialPrompt) {
       return NextResponse.json({ error: 'Image and prompt are required' }, { status: 400 });
     }
 
@@ -43,14 +55,43 @@ export async function POST(req: NextRequest) {
     // Prepare the image part for the Google Generative AI request
     const imagePart = fileToGenerativePart(base64Data, mimeType);
 
-    // Send the prompt and image to the model
-    const result = await model.generateContent([prompt, imagePart]);
+    // First API call with the initial prompt and image
+    const firstPrompt = "Please return a JSON block with all the items and their prices in this format extracted from the uploaded receipt. Make sure to include discounts and negative numbers.";
+    const firstResult = await model.generateContent([firstPrompt, imagePart]);
 
-    // Log the result for debugging
-    console.log('Google Gemini API Result:', result.response.text());
+    const extractedJson = firstResult.response.text();
+    console.log('First prompt result (extracted JSON):', extractedJson);
 
-    // Return the AI-generated result
-    return NextResponse.json({ text: result.response.text() });
+    // Ensure valid JSON response
+    const parsedJson = sanitizeJSONResponse(extractedJson);
+    if (!parsedJson) {
+      return NextResponse.json({ error: 'Failed to extract valid JSON from the first prompt.' }, { status: 500 });
+    }
+
+    // Second API call with the cleaned-up prompt
+    const secondPrompt = `Here is a json output from OCR extracted key values from a receipt. Please clean up all the keys and values based on these rules:
+    {
+      "Item Name": "$Price"
+    }
+    - All keys should be human readable (e.g. Bounty Paper Towels)
+    - Values with a discount code such as (-A) should be returned as negative price value
+    
+    ${JSON.stringify(parsedJson)}`;
+    
+    const secondResult = await model.generateContent([secondPrompt]);
+    const cleanedJson = secondResult.response.text();
+    
+    // Parse and validate the cleaned JSON
+    const sanitizedCleanedJson = sanitizeJSONResponse(cleanedJson);
+    if (!sanitizedCleanedJson) {
+      return NextResponse.json({ error: 'Failed to parse cleaned JSON.' }, { status: 500 });
+    }
+
+    console.log('Second prompt result (cleaned JSON):', sanitizedCleanedJson);
+
+    // Return the cleaned-up result
+    return NextResponse.json({ cleanedJson: sanitizedCleanedJson }, { status: 200 });
+    
   } catch (error) {
     console.error('Error processing request:', error);
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });

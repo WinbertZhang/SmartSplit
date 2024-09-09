@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { FaReceipt } from 'react-icons/fa';
 
 interface UploadButtonProps {
   onUpload: (file: File) => void;
@@ -29,7 +30,7 @@ export default function UploadButton({ onUpload }: UploadButtonProps) {
       />
       <button
         onClick={handleClick}
-        className="bg-[#353B47] text-white px-4 py-2 hover:bg-[#4A4F5C] rounded-md"
+        className="bg-[#353B47] text-white px-6 py-4 hover:bg-[#4A4F5C] rounded-md"
       >
         Upload Image
       </button>

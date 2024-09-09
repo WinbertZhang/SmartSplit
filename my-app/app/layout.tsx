@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import NavBar from "@/components/navBar";
-import Footer from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "SplitSmart",

@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import UploadButton from "@/components/uploadButton";
 import Image from "next/image";
+import { addDoc, collection } from "firebase/firestore";
+import { db } from "@/lib/firebaseConfig";
+import { toast, ToastContainer } from "react-toastify"; // Import Toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import Toastify CSS
+import ReceiptTable from "@/components/receiptTable";
 
-// Define the structure of a receipt item with `id`
+// Define the structure of a receipt item
 interface ReceiptItem {
   id: number;
   item: string;
@@ -13,62 +17,53 @@ interface ReceiptItem {
   split: boolean; // New field to track whether the user wants to split the item
 }
 
-// Define the structure of the receipt data that will be returned
+// Define the structure of the receipt data
 interface ReceiptData {
   items: ReceiptItem[];
-}
-
-// Receipt Table component with checkboxes for splitting
-function ReceiptTable({
-  receiptItems,
-  onToggleSplit,
-}: {
-  receiptItems: ReceiptItem[];
-  onToggleSplit: (id: number) => void;
-}) {
-  return (
-    <div className="rounded-lg shadow-lg overflow-hidden bg-[#353B47]">
-      <table className="min-w-full text-white">
-        <thead>
-          <tr className="bg-[#1A2535]">
-            <th className="py-3 px-4 text-left font-medium text-white">Item</th>
-            <th className="py-3 px-4 text-left font-medium text-white">
-              Price
-            </th>
-            <th className="py-3 px-4 text-center font-medium text-white">
-              Split?
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {receiptItems.map((item) => (
-            <tr
-              key={item.id}
-              className="border-t border-gray-600 hover:bg-[#4A4F5C]"
-            >
-              <td className="py-3 px-4">{item.item}</td>
-              <td className="py-3 px-4">${item.price.toFixed(2)}</td>
-              <td className="py-3 px-4 text-center">
-                <input
-                  type="checkbox"
-                  checked={item.split}
-                  onChange={() => onToggleSplit(item.id)}
-                  className="w-5 h-5 text-[#35B2EB] border-[#35B2EB] rounded"
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  subtotal: number;
+  tax: number;
+  total: number;
 }
 
 export default function ReceiptPage() {
   const [imageURL, setImageURL] = useState<string | null>(null); // Store image URL for display
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null); // Use ReceiptData type
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const showSuccessToast = () => {
+    toast.success(
+      <div className="flex items-center">
+        Receipt data saved successfully!
+      </div>,
+      {
+        position: "top-center",
+        autoClose: 3000, // 3 seconds
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: false,
+        progress: undefined,
+      }
+    );
+  };
+
+  const showErrorToast = () => {
+    toast.error(
+      <div className="flex items-center">
+        Error saving receipt data!
+      </div>,
+      {
+        position: "top-center",
+        autoClose: 3000, // 3 seconds
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: false,
+        progress: undefined,
+      }
+    );
+  };
 
   const handleImageUpload = async (uploadedImage: File) => {
     setImageURL(URL.createObjectURL(uploadedImage)); // Create a temporary URL for the image preview
@@ -81,7 +76,7 @@ export default function ReceiptPage() {
       'Please return a JSON block with all the items and their prices in this format: { "ItemName": "$Price" }'
     );
 
-    // Send the image and prompt to the Next.js API route
+    // Send the image and prompt to the Next.js Gemini API route
     try {
       const res = await fetch("/api/gemini-parse", {
         method: "POST",
@@ -90,20 +85,36 @@ export default function ReceiptPage() {
 
       if (res.ok) {
         const jsonResponse = await res.json();
+        const cleanedData = jsonResponse.cleanedJson; // Cleaned JSON data
 
-        // Assuming the response is in this format: "{\"PRODUCE 4640\": \"$3.98\"}"
-        const parsedData = JSON.parse(jsonResponse.text);
+        console.log("Cleaned Data for Receipt:", cleanedData); // Debugging statement
 
-        // Convert object to array of items
-        const itemsArray: ReceiptItem[] = Object.entries(parsedData).map(
-          ([itemName, itemPrice], index) => ({
-            id: index + 1, // Add a unique id for each item
-            item: itemName,
-            price: parseFloat(itemPrice.replace(/[^\d.]/g, "")), // Clean the price
-          })
+        // Extract Subtotal, Tax, and Total
+        const subtotal = cleanedData.Subtotal ? parseFloat(cleanedData.Subtotal.replace(/[^\d.]/g, "")) : 0;
+        const tax = cleanedData.Tax ? parseFloat(cleanedData.Tax.replace(/[^\d.]/g, "")) : 0;
+        const total = cleanedData.Total ? parseFloat(cleanedData.Total.replace(/[^\d.]/g, "")) : 0;
+
+        // Filter out non-item keys like "Subtotal", "Tax", and "Total"
+        const filteredData = Object.entries(cleanedData).filter(
+          ([key]) => !["Subtotal", "Tax", "Total"].includes(key)
         );
 
-        setReceiptData({ items: itemsArray }); // Set receipt data as an array of items
+        // Convert object to array of items
+        const itemsArray: ReceiptItem[] = filteredData.map(
+          ([itemName, itemPrice], index) => {
+            const priceString = itemPrice ? String(itemPrice) : "0";
+            return {
+              id: index + 1, // Add a unique id for each item
+              item: itemName,
+              price: parseFloat(priceString.replace(/[^\d.]/g, "")) || 0, // Clean the price and handle invalid numbers
+              split: false, // Default to false
+            };
+          }
+        );
+
+        console.log("Items Array for ReceiptTable:", itemsArray); // Debugging statement
+
+        setReceiptData({ items: itemsArray, subtotal, tax, total }); // Set receipt data as an array of items
       } else {
         console.error("Failed to process the receipt");
       }
@@ -120,16 +131,46 @@ export default function ReceiptPage() {
       const updatedItems = receiptData.items.map((item) =>
         item.id === id ? { ...item, split: !item.split } : item
       );
-      setReceiptData({ items: updatedItems });
+      setReceiptData({ ...receiptData, items: updatedItems });
     }
   };
 
-  // Handle submit and confirm
-  const handleSubmit = () => {
+  // Handle submit and save to Firebase
+  const handleSubmit = async () => {
     const confirmation = window.confirm("Are you sure you want to submit?");
-    if (confirmation) {
-      router.push("/dashboard");
+    if (confirmation && receiptData) {
+      try {
+        // Save receipt data to Firebase Firestore
+        const expensesCollection = collection(db, "expenses");
+        await addDoc(expensesCollection, {
+          items: receiptData.items,
+          subtotal: receiptData.subtotal,
+          tax: receiptData.tax,
+          total: receiptData.total,
+          createdAt: new Date(),
+        });
+
+        console.log("Receipt data saved to Firestore");
+
+        // Show success toast notification
+        showSuccessToast();
+        setIsSubmitted(true);
+
+        setTimeout(() => {
+          resetPage();
+        }, 3000);
+      } catch (error) {
+        console.error("Error saving to Firestore:", error);
+        // Show error toast notification
+        showErrorToast();
+      }
     }
+  };
+
+  const resetPage = () => {
+    setImageURL(null);
+    setReceiptData(null);
+    setIsSubmitted(false);
   };
 
   return (
@@ -138,6 +179,7 @@ export default function ReceiptPage() {
       <div className="max-w-2xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
         {/* Title */}
         <h2 className="text-white text-2xl font-bold mb-6">Upload Receipt</h2>
+
         <div className="my-6">
           {/* Upload Button Centered */}
           <div className="flex justify-center">
@@ -172,6 +214,9 @@ export default function ReceiptPage() {
               receiptData && (
                 <ReceiptTable
                   receiptItems={receiptData.items}
+                  subtotal={receiptData.subtotal}
+                  tax={receiptData.tax}
+                  total={receiptData.total}
                   onToggleSplit={toggleSplit}
                 />
               )
@@ -182,13 +227,15 @@ export default function ReceiptPage() {
               <button
                 onClick={handleSubmit}
                 className="w-full bg-[#353B47] text-white px-6 py-3 text-lg font-semibold rounded-lg hover:bg-[#4A4F5C] transition-all shadow-lg"
+                disabled={isSubmitted}
               >
                 Submit
               </button>
             </div>
           )}
-        </div>{" "}
+        </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }
