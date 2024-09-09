@@ -1,5 +1,3 @@
-// app/past-splits/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -53,6 +51,7 @@ export default function PastSplits() {
 
   return (
     <div className="flex flex-col items-center relative z-10 mt-20 pt-20">
+      {/* Page Title */}
       <div className="text-center text-[2.5rem] leading-none sm:text-6xl tracking-tight font-bold text-white mb-4 relative z-10">
         Past Splits
       </div>
@@ -77,33 +76,37 @@ export default function PastSplits() {
       </div>
 
       {/* Expenses Display */}
-
-      <div className="max-w-screen-lg mx-auto mt-6">
-        <h2 className="text-white text-2xl mb-4">Group Expenses</h2>
+      <div className="max-w-screen-lg mx-auto mt-6 w-full">
+        <h2 className="text-white text-2xl mb-4 text-center">Group Expenses</h2>
 
         {expenses.length === 0 ? (
-          <p className="text-white">No expenses yet</p>
+          <p className="text-white text-center">No expenses yet</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {expenses.map((expense) => (
-              <div
-                key={expense.id}
-                className="bg-gray-800 text-white p-6 rounded-lg shadow-lg"
-              >
-                <h3 className="text-lg font-semibold mb-2">
-                  {expense.description}
-                </h3>
-                <p className="text-gray-400 mb-2">
-                  Category: {expense.category}
-                </p>
-                <p className="text-gray-400">
-                  Amount:{" "}
-                  <span className="text-green-400">
-                    ${Number(expense.amount).toFixed(2)}
-                  </span>
-                </p>
-              </div>
-            ))}
+          <div
+            className="bg-[#1F2A3D] p-6 rounded-lg shadow-lg"
+            style={{ transition: "height 0.3s ease-in-out" }}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              {expenses.map((expense) => (
+                <div
+                  key={expense.id}
+                  className="bg-gray-800 text-white p-6 rounded-xl shadow-lg border-2 border-green-400"
+                >
+                  <h3 className="text-lg font-semibold mb-2 ">
+                    {expense.description}
+                  </h3>
+                  <p className="text-gray-400 mb-2">
+                    Category: {expense.category}
+                  </p>
+                  <p className="text-gray-400">
+                    Amount:{" "}
+                    <span className="text-green-400">
+                      ${Number(expense.amount).toFixed(2)}
+                    </span>
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
