@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -26,4 +27,6 @@ isSupported().then((supported) => {
 // Initialize Firebase Authentication
 const auth = getAuth(app);
 
-export { app, auth, analytics };
+const db = getFirestore(app);
+
+export { app, auth, analytics, db};

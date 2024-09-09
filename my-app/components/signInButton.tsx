@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebaseConfig'; // Firebase auth config
 import { FaGoogle } from "react-icons/fa";
+import { FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 
 const googleProvider = new GoogleAuthProvider();
@@ -54,19 +55,21 @@ export default function SignInButton() {
   return (
     <div className="text-center">
       {user ? (
-        <div>
-          <p className="text-xl font-semibold mb-4">Welcome, {user.displayName}!</p>
-          <button
-            onClick={handleSignOut}
-            className="bg-red-500 text-white px-4 py-2 rounded w-full"
-          >
-            Sign Out
-          </button>
-        </div>
+        <div className="flex items-center space-x-4">
+        <p>Welcome, {user.displayName?.split(" ")[0]}!</p>{" "}
+        {/* Display first name */}
+        <button
+          onClick={handleSignOut}
+          className="bg-[#212C40] text-white px-4 py-2 rounded-lg hover:bg-[#1A2535] flex items-center transition-colors duration-200"
+        >
+          <FiLogOut className="mr-2" /> {/* Icon for logging out */}
+          Sign Out
+        </button>
+      </div>
       ) : (
         <button
           onClick={handleSignIn}
-          className="bg-gray-100 text-white px-4 py-2 rounded-lg flex items-center justify-center"
+          className=" text-white px-4 py-2 rounded-lg flex items-center justify-center border-white border-[1px] hover:bg-gray-800"
         >
           <FaGoogle className="mr-2" /> Log In
         </button>
