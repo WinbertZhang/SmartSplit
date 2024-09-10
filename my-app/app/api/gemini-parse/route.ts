@@ -32,6 +32,37 @@ function sanitizeJSONResponse(jsonString: string) {
   }
 }
 
+function removeItemsAfterTotal(jsonObject: any) {
+  let totalIndex = -1;
+
+  // Iterate through the object to find the total
+  const entries = Object.entries(jsonObject);
+  for (let i = 0; i < entries.length; i++) {
+    const [key, value] = entries[i];
+
+    // Check if the key is something like "Total" or "TOTAL"
+    const normalizedKey = key.trim().toLowerCase();
+    if (normalizedKey.includes('total')) {
+      totalIndex = i; // Mark the index of the total
+      break;
+    }
+  }
+
+  if (totalIndex === -1) {
+    // If no total is found, return the object as is
+    return jsonObject;
+  }
+
+  // Filter out any items that come after the total
+  const filteredEntries = entries.slice(0, totalIndex + 1);
+
+  // Convert the filtered entries back to an object
+  const cleanedJson = Object.fromEntries(filteredEntries);
+
+  return cleanedJson;
+}
+
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -83,14 +114,18 @@ export async function POST(req: NextRequest) {
     
     // Parse and validate the cleaned JSON
     const sanitizedCleanedJson = sanitizeJSONResponse(cleanedJson);
+
+
+
     if (!sanitizedCleanedJson) {
       return NextResponse.json({ error: 'Failed to parse cleaned JSON.' }, { status: 500 });
     }
+    const sanitizedCleanedNoTotalJson = removeItemsAfterTotal(sanitizedCleanedJson);
 
-    console.log('Second prompt result (cleaned JSON):', sanitizedCleanedJson);
+    console.log('Second prompt result (cleaned JSON):', sanitizedCleanedNoTotalJson);
 
     // Return the cleaned-up result
-    return NextResponse.json({ cleanedJson: sanitizedCleanedJson }, { status: 200 });
+    return NextResponse.json({ cleanedJson: sanitizedCleanedNoTotalJson }, { status: 200 });
     
   } catch (error) {
     console.error('Error processing request:', error);

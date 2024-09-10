@@ -135,6 +135,36 @@ export default function ReceiptPage() {
     }
   };
 
+  // Handle editing an item (name or price)
+  const editItem = (id: number, updatedItem: Partial<{ item: string; price: number; subtotal?: number; tax?: number; total?: number }>) => {
+    if (receiptData) {
+      if (id === 0) {
+        // Update subtotal, tax, or total
+        setReceiptData({ ...receiptData, ...updatedItem });
+      } else {
+        // Update individual receipt items
+        const updatedItems = receiptData.items.map((item) =>
+          item.id === id ? { ...item, ...updatedItem } : item
+        );
+        setReceiptData({ ...receiptData, items: updatedItems });
+      }
+    }
+  };
+  
+  // Handle removing an item
+  const removeItem = (id: number) => {
+    if (receiptData) {
+      const updatedItems = receiptData.items.filter((item) => item.id !== id);
+      setReceiptData({ ...receiptData, items: updatedItems });
+    }
+  };
+
+  const reorderItems = (items: ReceiptItem[]) => {
+    setReceiptData((prevState) => prevState ? { ...prevState, items } : null);
+  };
+
+  
+
   // Handle submit and save to Firebase
   const handleSubmit = async () => {
     const confirmation = window.confirm("Are you sure you want to submit?");
@@ -218,6 +248,9 @@ export default function ReceiptPage() {
                   tax={receiptData.tax}
                   total={receiptData.total}
                   onToggleSplit={toggleSplit}
+                  onEditItem={editItem}
+                  onRemoveItem={removeItem}
+                  onReorderItems={reorderItems}
                 />
               )
             )}

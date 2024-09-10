@@ -119,15 +119,15 @@ export default function PastSplits() {
                   onClick={() => openModal(expense)}
                 >
                   <h3 className="text-lg font-semibold mb-2 ">
-                    {expense.description}
+                    {expense.title}
                   </h3>
                   <p className="text-gray-400 mb-2">
                     Category: {expense.category}
                   </p>
                   <p className="text-gray-400">
-                    Amount:{" "}
+                    Total:{" "}
                     <span className="text-green-400">
-                      ${Number(expense.amount).toFixed(2)}
+                      ${Number(expense.total).toFixed(2)}
                     </span>
                   </p>
                 </div>
@@ -142,7 +142,7 @@ export default function PastSplits() {
   <div className="fixed inset-0 top-[76px] bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
     <div className="bg-white p-10 rounded-lg shadow-lg relative w-full max-w-3xl mx-auto overflow-y-auto" style={{ maxHeight: '80vh' }}>
       <button
-        className="absolute top-8 right-2 text-gray-500 hover:text-gray-700"
+        className="absolute top-6 right-6 text-gray-500 hover:text-gray-700"
         onClick={closeModal}
       >
         X
@@ -150,7 +150,7 @@ export default function PastSplits() {
 
       {/* Receipt Information */}
       <h3 className="text-xl font-semibold mb-2">
-        {selectedExpense.description}
+        {selectedExpense.title}
       </h3>
       <p className="text-gray-600 mb-2">
         Category: {selectedExpense.category}
@@ -174,12 +174,9 @@ export default function PastSplits() {
       {selectedExpense.items && (
         <ReceiptViewTable
           receiptItems={selectedExpense.items}
-          subtotal={selectedExpense.items.reduce(
-            (sum, item) => sum + item.price,
-            0
-          )}
-          tax={0} // Add actual tax calculation logic if needed
-          total={Number(selectedExpense.amount)}
+          subtotal={selectedExpense.subtotal}
+          tax={selectedExpense.tax} // Add actual tax calculation logic if needed
+          total={Number(selectedExpense.total)}
           onToggleSplit={handleToggleSplit}
         />
       )}

@@ -24,8 +24,10 @@ export interface Expense {
   id?: string;
   groupId: string;
   userId: string;
-  description: string;
-  amount: number;
+  title: string;
+  total: number;
+  tax: number;
+  subtotal: number;
   category: string;
   sharedWith: string[];
   splitDetails: { userId: string; amount: number }[];
