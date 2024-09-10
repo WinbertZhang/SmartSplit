@@ -1,5 +1,6 @@
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
-import { FaTimes, FaGripLines } from "react-icons/fa"; // Import icons
+import { FaTimes, FaGripLines, FaPlus } from "react-icons/fa"; // Import the new plus icon
+import React from 'react';
 
 // Define the structure of a receipt item
 interface ReceiptItem {
@@ -21,6 +22,7 @@ interface ReceiptTableProps {
   ) => void;
   onRemoveItem: (id: number) => void;
   onReorderItems: (items: ReceiptItem[]) => void;
+  onAddNewItem: (newItem: ReceiptItem) => void; // Handler for adding new items
 }
 
 export default function ReceiptTable({
@@ -32,7 +34,12 @@ export default function ReceiptTable({
   onEditItem,
   onRemoveItem,
   onReorderItems,
+  onAddNewItem,
 }: ReceiptTableProps) {
+  // Local state for new item inputs
+  const [newItemName, setNewItemName] = React.useState('');
+  const [newItemPrice, setNewItemPrice] = React.useState('');
+
   // Handle the drag-and-drop reorder event
   const handleOnDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -48,6 +55,22 @@ export default function ReceiptTable({
     const updatedValue =
       field === "price" ? parseFloat(value.replace(/[^\d.]/g, "")) || 0 : value;
     onEditItem(id, { [field]: updatedValue });
+  };
+
+  // Handle adding a new item
+  const handleAddNewItem = () => {
+    if (newItemName.trim() && newItemPrice) {
+      const newItem: ReceiptItem = {
+        id: Date.now(), // Use a timestamp for unique id
+        item: newItemName,
+        price: parseFloat(newItemPrice),
+        split: false,
+      };
+
+      onAddNewItem(newItem);
+      setNewItemName(''); // Reset the input fields
+      setNewItemPrice('');
+    }
   };
 
   return (
@@ -122,6 +145,27 @@ export default function ReceiptTable({
           )}
         </Droppable>
       </DragDropContext>
+
+      {/* Section to add new items */}
+      <div className="px-4 py-4 flex justify-between items-center">
+        <input
+          type="text"
+          value={newItemName}
+          onChange={(e) => setNewItemName(e.target.value)}
+          placeholder="New item name"
+          className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
+        />
+        <input
+          type="text"
+          value={newItemPrice}
+          onChange={(e) => setNewItemPrice(e.target.value.replace(/[^\d.]/g, ""))}
+          placeholder="Price"
+          className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
+        />
+        <button onClick={handleAddNewItem}>
+          <FaPlus className="text-[#35B2EB]" />
+        </button>
+      </div>
 
       {/* Line separator */}
       <hr className="my-4 border-t border-gray-500" />

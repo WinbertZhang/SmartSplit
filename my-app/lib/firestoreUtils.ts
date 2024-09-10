@@ -12,6 +12,14 @@ import {
   FieldValue,
 } from "firebase/firestore";
 
+export async function saveReceiptToFirebase(receiptData: any) {
+  const expensesCollection = collection(db, "expenses");
+  await addDoc(expensesCollection, {
+    ...receiptData,
+    createdAt: new Date(),
+  });
+}
+
 export interface Group {
   id?: string; // Optional for local state before Firestore assignment
   groupName: string;

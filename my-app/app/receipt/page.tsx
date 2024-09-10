@@ -3,18 +3,19 @@
 import { useState } from "react";
 import UploadButton from "@/components/uploadButton";
 import Image from "next/image";
-import { addDoc, collection } from "firebase/firestore";
-import { db } from "@/lib/firebaseConfig";
-import { toast, ToastContainer } from "react-toastify"; // Import Toastify
-import 'react-toastify/dist/ReactToastify.css'; // Import Toastify CSS
+import { showSuccessToast, showErrorToast } from "@/components/toastNotifications";
 import ReceiptTable from "@/components/receiptTable";
+import { processReceiptImage } from "@/components/receiptProcessor";
+import { saveReceiptToFirebase } from "@/lib/firestoreUtils";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css'; // Import Toastify CSS
 
 // Define the structure of a receipt item
 interface ReceiptItem {
   id: number;
   item: string;
   price: number;
-  split: boolean; // New field to track whether the user wants to split the item
+  split: boolean;
 }
 
 // Define the structure of the receipt data
@@ -26,106 +27,49 @@ interface ReceiptData {
 }
 
 export default function ReceiptPage() {
-  const [imageURL, setImageURL] = useState<string | null>(null); // Store image URL for display
-  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null); // Use ReceiptData type
+  const [imageURL, setImageURL] = useState<string | null>(null);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const showSuccessToast = () => {
-    toast.success(
-      <div className="flex items-center">
-        Receipt data saved successfully!
-      </div>,
-      {
-        position: "top-center",
-        autoClose: 3000, // 3 seconds
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: false,
-        progress: undefined,
-      }
-    );
-  };
-
-  const showErrorToast = () => {
-    toast.error(
-      <div className="flex items-center">
-        Error saving receipt data!
-      </div>,
-      {
-        position: "top-center",
-        autoClose: 3000, // 3 seconds
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: false,
-        progress: undefined,
-      }
-    );
-  };
-
+  // Handle image upload and processing
   const handleImageUpload = async (uploadedImage: File) => {
-    setImageURL(URL.createObjectURL(uploadedImage)); // Create a temporary URL for the image preview
+    setImageURL(URL.createObjectURL(uploadedImage)); // Show image preview
     setLoading(true);
 
-    const formData = new FormData();
-    formData.append("image", uploadedImage);
-    formData.append(
-      "prompt",
-      'Please return a JSON block with all the items and their prices in this format: { "ItemName": "$Price" }'
-    );
-
-    // Send the image and prompt to the Next.js Gemini API route
     try {
-      const res = await fetch("/api/gemini-parse", {
-        method: "POST",
-        body: formData,
-      });
+      const cleanedData = await processReceiptImage(uploadedImage);
 
-      if (res.ok) {
-        const jsonResponse = await res.json();
-        const cleanedData = jsonResponse.cleanedJson; // Cleaned JSON data
+      // Extract Subtotal, Tax, and Total
+      const subtotal = cleanedData.Subtotal ? parseFloat(cleanedData.Subtotal.replace(/[^\d.]/g, "")) : 0;
+      const tax = cleanedData.Tax ? parseFloat(cleanedData.Tax.replace(/[^\d.]/g, "")) : 0;
+      const total = cleanedData.Total ? parseFloat(cleanedData.Total.replace(/[^\d.]/g, "")) : 0;
 
-        console.log("Cleaned Data for Receipt:", cleanedData); // Debugging statement
+      // Filter out non-item keys like "Subtotal", "Tax", and "Total"
+      const filteredData = Object.entries(cleanedData).filter(
+        ([key]) => !["Subtotal", "Tax", "Total"].includes(key)
+      );
 
-        // Extract Subtotal, Tax, and Total
-        const subtotal = cleanedData.Subtotal ? parseFloat(cleanedData.Subtotal.replace(/[^\d.]/g, "")) : 0;
-        const tax = cleanedData.Tax ? parseFloat(cleanedData.Tax.replace(/[^\d.]/g, "")) : 0;
-        const total = cleanedData.Total ? parseFloat(cleanedData.Total.replace(/[^\d.]/g, "")) : 0;
+      // Convert object to array of items
+      const itemsArray: ReceiptItem[] = filteredData.map(
+        ([itemName, itemPrice], index) => ({
+          id: index + 1,
+          item: itemName,
+          price: parseFloat((itemPrice as string).replace(/[^\d.]/g, "")) || 0,
+          split: false,
+        })
+      );
 
-        // Filter out non-item keys like "Subtotal", "Tax", and "Total"
-        const filteredData = Object.entries(cleanedData).filter(
-          ([key]) => !["Subtotal", "Tax", "Total"].includes(key)
-        );
-
-        // Convert object to array of items
-        const itemsArray: ReceiptItem[] = filteredData.map(
-          ([itemName, itemPrice], index) => {
-            const priceString = itemPrice ? String(itemPrice) : "0";
-            return {
-              id: index + 1, // Add a unique id for each item
-              item: itemName,
-              price: parseFloat(priceString.replace(/[^\d.]/g, "")) || 0, // Clean the price and handle invalid numbers
-              split: false, // Default to false
-            };
-          }
-        );
-
-        console.log("Items Array for ReceiptTable:", itemsArray); // Debugging statement
-
-        setReceiptData({ items: itemsArray, subtotal, tax, total }); // Set receipt data as an array of items
-      } else {
-        console.error("Failed to process the receipt");
-      }
+      setReceiptData({ items: itemsArray, subtotal, tax, total });
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error processing receipt:", error);
+      showErrorToast("Error processing receipt!");
     }
 
     setLoading(false);
   };
 
-  // Toggle the split status for an item
+  // Handle toggling the split status of an item
   const toggleSplit = (id: number) => {
     if (receiptData) {
       const updatedItems = receiptData.items.map((item) =>
@@ -135,14 +79,16 @@ export default function ReceiptPage() {
     }
   };
 
-  // Handle editing an item (name or price)
-  const editItem = (id: number, updatedItem: Partial<{ item: string; price: number; subtotal?: number; tax?: number; total?: number }>) => {
+  // Handle editing an item
+  const editItem = (
+    id: number,
+    updatedItem: Partial<{ item: string; price: number; subtotal?: number; tax?: number; total?: number }>
+  ) => {
     if (receiptData) {
       if (id === 0) {
         // Update subtotal, tax, or total
         setReceiptData({ ...receiptData, ...updatedItem });
       } else {
-        // Update individual receipt items
         const updatedItems = receiptData.items.map((item) =>
           item.id === id ? { ...item, ...updatedItem } : item
         );
@@ -150,7 +96,7 @@ export default function ReceiptPage() {
       }
     }
   };
-  
+
   // Handle removing an item
   const removeItem = (id: number) => {
     if (receiptData) {
@@ -159,40 +105,34 @@ export default function ReceiptPage() {
     }
   };
 
+  // Handle reordering items
   const reorderItems = (items: ReceiptItem[]) => {
-    setReceiptData((prevState) => prevState ? { ...prevState, items } : null);
+    setReceiptData((prevState) => (prevState ? { ...prevState, items } : null));
   };
 
-  
+  // Handle adding a new item
+  const addNewItem = (newItem: ReceiptItem) => {
+    if (receiptData) {
+      const updatedItems = [...receiptData.items, newItem];
+      setReceiptData({ ...receiptData, items: updatedItems });
+    }
+  };
 
-  // Handle submit and save to Firebase
+  // Handle submitting the receipt data to Firebase
   const handleSubmit = async () => {
     const confirmation = window.confirm("Are you sure you want to submit?");
     if (confirmation && receiptData) {
       try {
-        // Save receipt data to Firebase Firestore
-        const expensesCollection = collection(db, "expenses");
-        await addDoc(expensesCollection, {
-          items: receiptData.items,
-          subtotal: receiptData.subtotal,
-          tax: receiptData.tax,
-          total: receiptData.total,
-          createdAt: new Date(),
-        });
-
-        console.log("Receipt data saved to Firestore");
-
-        // Show success toast notification
-        showSuccessToast();
+        await saveReceiptToFirebase(receiptData);
+        showSuccessToast("Receipt data saved successfully!");
         setIsSubmitted(true);
 
         setTimeout(() => {
           resetPage();
         }, 3000);
       } catch (error) {
-        console.error("Error saving to Firestore:", error);
-        // Show error toast notification
-        showErrorToast();
+        console.error("Error saving to Firebase:", error);
+        showErrorToast("Error saving receipt data!");
       }
     }
   };
@@ -219,27 +159,18 @@ export default function ReceiptPage() {
           {/* Show the image preview if available */}
           {imageURL && (
             <div className="my-6">
-              <h2 className="text-xl font-semibold mb-4 text-white">
-                Uploaded Receipt:
-              </h2>
-              <Image
-                src={imageURL}
-                alt="Uploaded Receipt"
-                width={400}
-                height={400}
-                className="rounded-lg mx-auto"
-              />
+              <h2 className="text-xl font-semibold mb-4 text-white">Uploaded Receipt:</h2>
+              <Image src={imageURL} alt="Uploaded Receipt" width={400} height={400} className="rounded-lg mx-auto" />
             </div>
           )}
         </div>
+        
         <div className="m-4">
-          <div className=" text-white text-xl font-semibold">Receipt Items</div>
+          <div className="text-white text-xl font-semibold">Receipt Items</div>
 
           <div className="p-6">
             {loading ? (
-              <p className="text-gray-400">
-                Processing your receipt. Please wait...
-              </p>
+              <p className="text-gray-400">Processing your receipt. Please wait...</p>
             ) : (
               receiptData && (
                 <ReceiptTable
@@ -251,10 +182,12 @@ export default function ReceiptPage() {
                   onEditItem={editItem}
                   onRemoveItem={removeItem}
                   onReorderItems={reorderItems}
+                  onAddNewItem={addNewItem}
                 />
               )
             )}
           </div>
+
           {!loading && receiptData && (
             <div className="p-6">
               <button
@@ -268,6 +201,7 @@ export default function ReceiptPage() {
           )}
         </div>
       </div>
+
       <ToastContainer />
     </div>
   );
