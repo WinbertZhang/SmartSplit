@@ -9,12 +9,15 @@ import {
   Group,
   Expense,
 } from "@/lib/firestoreUtils";
+import ReceiptViewTable from "@/components/receiptViewTable"; // Import the ReceiptTable component
 
 export default function PastSplits() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   // Fetch groups for the logged-in user
   useEffect(() => {
@@ -48,6 +51,28 @@ export default function PastSplits() {
 
     return () => unsubscribe();
   }, []);
+
+  // Open modal when an expense is clicked
+  const openModal = (expense: Expense) => {
+    setSelectedExpense(expense);
+    setIsModalOpen(true);
+  };
+
+  // Close modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedExpense(null);
+  };
+
+  // Function to toggle the "split" state of a receipt item
+  const handleToggleSplit = (itemId: number) => {
+    if (selectedExpense) {
+      const updatedItems = selectedExpense.items.map((item) =>
+        item.id === itemId ? { ...item, split: !item.split } : item
+      );
+      setSelectedExpense({ ...selectedExpense, items: updatedItems });
+    }
+  };
 
   return (
     <div className="flex flex-col items-center relative z-10 mt-20 pt-20">
@@ -90,7 +115,8 @@ export default function PastSplits() {
               {expenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="bg-gray-800 text-white p-6 rounded-xl shadow-lg border-2 border-green-400"
+                  className="bg-gray-800 text-white p-6 rounded-xl shadow-lg border-2 border-green-400 cursor-pointer"
+                  onClick={() => openModal(expense)}
                 >
                   <h3 className="text-lg font-semibold mb-2 ">
                     {expense.description}
@@ -110,6 +136,58 @@ export default function PastSplits() {
           </div>
         )}
       </div>
+
+      {/* Modal */}
+      {isModalOpen && selectedExpense && (
+  <div className="fixed inset-0 top-[76px] bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+    <div className="bg-white p-10 rounded-lg shadow-lg relative w-full max-w-3xl mx-auto overflow-y-auto" style={{ maxHeight: '80vh' }}>
+      <button
+        className="absolute top-8 right-2 text-gray-500 hover:text-gray-700"
+        onClick={closeModal}
+      >
+        X
+      </button>
+
+      {/* Receipt Information */}
+      <h3 className="text-xl font-semibold mb-2">
+        {selectedExpense.description}
+      </h3>
+      <p className="text-gray-600 mb-2">
+        Category: {selectedExpense.category}
+      </p>
+      <p className="text-gray-600 mb-2">
+        Group ID: {selectedExpense.groupId}
+      </p>
+
+      {/* Receipt Image */}
+      {selectedExpense.receiptUrl && (
+        <div className="mb-4">
+          <img
+            src={selectedExpense.receiptUrl}
+            alt="Receipt"
+            className="rounded-lg max-w-full h-auto"
+          />
+        </div>
+      )}
+
+      {/* Display Receipt Table */}
+      {selectedExpense.items && (
+        <ReceiptViewTable
+          receiptItems={selectedExpense.items}
+          subtotal={selectedExpense.items.reduce(
+            (sum, item) => sum + item.price,
+            0
+          )}
+          tax={0} // Add actual tax calculation logic if needed
+          total={Number(selectedExpense.amount)}
+          onToggleSplit={handleToggleSplit}
+        />
+      )}
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 }

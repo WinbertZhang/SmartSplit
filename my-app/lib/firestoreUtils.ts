@@ -31,7 +31,14 @@ export interface Expense {
   splitDetails: { userId: string; amount: number }[];
   receiptUrl?: string;
   createdAt?: Date;
+  items: {
+    id: number;
+    item: string;
+    price: number;
+    split: boolean;
+  }[];
 }
+
 
 export interface Invitation {
   email: string;
