@@ -40,7 +40,7 @@ export default function NavBar() {
   };
 
   return (
-    <header className="fixed my-2 w-full p-2 bg-transparent backdrop-blur-md border-b border-gray-600 z-50">
+    <header className="fixed w-full p-2 bg-transparent backdrop-blur-md border-b border-gray-600 z-50">
       {/* Added border-b */}
       <div className="flex justify-between items-center max-w-screen-xl mx-auto h-[60px]">
         {/* Logo on the far left */}
