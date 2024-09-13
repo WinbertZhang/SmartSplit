@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation"; // Move this to the top of the component
 import UploadButton from "@/components/uploadButton";
 import Image from "next/image";
 import { showSuccessToast, showErrorToast } from "@/components/toastNotifications";
@@ -9,7 +10,6 @@ import { processReceiptImage } from "@/components/receiptProcessor";
 import { saveReceiptToFirebase } from "@/lib/firestoreUtils";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css'; // Import Toastify CSS
-import { useRouter } from "next/navigation";
 
 // Define the structure of a receipt item
 interface ReceiptItem {
@@ -31,7 +31,8 @@ export default function ReceiptPage() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const router = useRouter(); // For navigation
+  
+  const router = useRouter(); // Place the hook here at the top level
 
   // Handle image upload and processing
   const handleImageUpload = async (uploadedImage: File) => {
@@ -108,17 +109,40 @@ export default function ReceiptPage() {
     }
   };
 
-  // Handle confirming and navigating to Split Page
+  // Handle confirming and navigating to split page
   const handleConfirm = () => {
     if (receiptData) {
-      const router = useRouter();
-  
       // Create a URLSearchParams object to encode the query string
       const queryString = new URLSearchParams({ data: JSON.stringify(receiptData) }).toString();
-  
-      // Navigate to the split page with the query string
+      
+      // Navigate to the split page with the encoded query string
       router.push(`/split?${queryString}`);
     }
+  };
+
+  // Handle submitting the receipt data to Firebase
+  const handleSubmit = async () => {
+    const confirmation = window.confirm("Are you sure you want to submit?");
+    if (confirmation && receiptData) {
+      try {
+        await saveReceiptToFirebase(receiptData);
+        showSuccessToast("Receipt data saved successfully!");
+        setIsSubmitted(true);
+
+        setTimeout(() => {
+          resetPage();
+        }, 3000);
+      } catch (error) {
+        console.error("Error saving to Firebase:", error);
+        showErrorToast("Error saving receipt data!");
+      }
+    }
+  };
+
+  const resetPage = () => {
+    setImageURL(null);
+    setReceiptData(null);
+    setIsSubmitted(false);
   };
 
   return (
@@ -168,10 +192,18 @@ export default function ReceiptPage() {
           {!loading && receiptData && (
             <div className="p-6">
               <button
-                onClick={handleConfirm}
+                onClick={handleSubmit}
                 className="w-full bg-[#353B47] text-white px-6 py-3 text-lg font-semibold rounded-lg hover:bg-[#4A4F5C] transition-all shadow-lg"
+                disabled={isSubmitted}
               >
-                Confirm
+                Submit
+              </button>
+
+              <button
+                onClick={handleConfirm} // Navigate to Split page
+                className="w-full bg-[#FF6347] text-white px-6 py-3 mt-4 text-lg font-semibold rounded-lg hover:bg-[#FF7F50] transition-all shadow-lg"
+              >
+                Confirm and Split
               </button>
             </div>
           )}
