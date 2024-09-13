@@ -3,13 +3,13 @@ export default function ReceiptViewTable({
   subtotal,
   tax,
   total,
-  onToggleSplit,
+  onToggleSplit, // Make it optional
 }: {
   receiptItems: any[];
   subtotal: number;
   tax: number;
   total: number;
-  onToggleSplit: (id: number) => void;
+  onToggleSplit?: (id: number) => void; // Make it optional
 }) {
   return (
     <div className="rounded-lg shadow-lg overflow-hidden bg-[#353B47]">
@@ -25,6 +25,7 @@ export default function ReceiptViewTable({
             <tr
               key={item.id}
               className="border-t border-gray-600 hover:bg-[#4A4F5C]"
+              onClick={() => onToggleSplit?.(item.id)} // Call onToggleSplit if it exists
             >
               <td className="py-3 px-4">{item.item}</td>
               <td className="py-3 px-4">${item.price.toFixed(2)}</td>

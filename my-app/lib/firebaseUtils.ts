@@ -1,5 +1,4 @@
-// lib/firestoreUtils.ts
-import { db } from "./firebaseConfig";
+import { db, storage } from "./firebaseConfig";
 import {
   collection,
   addDoc,
@@ -11,15 +10,45 @@ import {
   QuerySnapshot,
   FieldValue,
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-export async function saveReceiptToFirebase(receiptData: any) {
-  const expensesCollection = collection(db, "expenses");
-  await addDoc(expensesCollection, {
-    ...receiptData,
-    createdAt: new Date(),
-  });
+// Function to upload image to Firebase Storage and return the URL
+export async function uploadImageToFirebaseStorage(imageFile: File): Promise<string | null> {
+  try {
+    const storageRef = ref(storage, `receipts/${imageFile.name}`); // Create a reference to the image in Firebase Storage
+    await uploadBytes(storageRef, imageFile); // Upload the image
+    const downloadURL = await getDownloadURL(storageRef); // Get the download URL
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading image to Firebase Storage:", error);
+    throw new Error("Error uploading image to Firebase Storage");
+  }
 }
 
+// Function to save receipt items and return the unique receipt ID
+export async function saveReceiptItemsToFirestore(
+  userId: string,
+  receiptData: any
+): Promise<string> {
+  try {
+    const expensesCollection = collection(db, "expenses");
+
+    // Add the receipt data to Firestore and return the unique receipt ID
+    const receiptDocRef = await addDoc(expensesCollection, {
+      ...receiptData,
+      userId: userId,
+      createdAt: serverTimestamp(),
+    });
+
+    console.log("Receipt saved with ID:", receiptDocRef.id);
+    return receiptDocRef.id; // Return the unique ID
+  } catch (error) {
+    console.error("Error saving receipt items to Firestore:", error);
+    throw new Error("Error saving receipt items");
+  }
+}
+
+// Other Firestore functions, like creating groups, adding expenses, etc.
 export interface Group {
   id?: string; // Optional for local state before Firestore assignment
   groupName: string;
@@ -48,7 +77,6 @@ export interface Expense {
     split: boolean;
   }[];
 }
-
 
 export interface Invitation {
   email: string;
@@ -79,6 +107,7 @@ export const createGroup = async (
   }
 };
 
+// Log invitation to Firestore
 export const logInvitation = async (
   email: string,
   groupId: string
@@ -98,7 +127,7 @@ export const logInvitation = async (
   }
 };
 
-// Add an expense to a group
+// Add an expense to Firestore
 export const addExpenseToGroup = async (
   expense: Omit<Expense, "id" | "createdAt">
 ): Promise<void> => {

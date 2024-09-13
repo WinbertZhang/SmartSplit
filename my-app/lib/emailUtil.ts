@@ -1,4 +1,4 @@
-import { logInvitation } from './firestoreUtils';
+import { logInvitation } from './firebaseUtils';
 
 // Example function to send email using a service like SendGrid
 export const sendGroupInvitation = async (email: string, groupId: string): Promise<void> => {

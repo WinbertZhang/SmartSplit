@@ -8,8 +8,9 @@ import {
   fetchGroupExpenses,
   Group,
   Expense,
-} from "@/lib/firestoreUtils";
+} from "@/lib/firebaseUtils";
 import ReceiptViewTable from "@/components/receiptViewTable"; // Import the ReceiptTable component
+import Image from "next/image";
 
 export default function PastSplits() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -162,10 +163,11 @@ export default function PastSplits() {
       {/* Receipt Image */}
       {selectedExpense.receiptUrl && (
         <div className="mb-4">
-          <img
+          <Image
             src={selectedExpense.receiptUrl}
             alt="Receipt"
-            className="rounded-lg max-w-full h-auto"
+            width={400}
+            height={400}
           />
         </div>
       )}

@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY, // Use environment variables for sensitive data
@@ -28,5 +29,6 @@ isSupported().then((supported) => {
 const auth = getAuth(app);
 
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-export { app, auth, analytics, db};
+export { app, auth, analytics, db, storage};
