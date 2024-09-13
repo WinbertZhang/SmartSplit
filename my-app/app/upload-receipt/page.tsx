@@ -20,6 +20,7 @@ import { getAuth } from "firebase/auth";
 import { v4 as uuidv4 } from "uuid";
 
 import { ReceiptData, ReceiptItem } from "@/data/receiptTypes";
+import { ReceiptProvider } from "@/context/receiptContext";
 
 export default function ReceiptPage() {
   const [imageURL, setImageURL] = useState<string | null>(null);
@@ -139,31 +140,30 @@ export default function ReceiptPage() {
     }
   };
 
-  // Handle confirming and navigating to split page
-  const handleConfirm = async () => {
-    if (receiptData) {
-      try {
-        const user = auth.currentUser;
-        if (!user) {
-          throw new Error("User not authenticated");
-        }
-
-        // Save the receipt items to Firestore and get the receipt ID
-        const receiptId = await saveReceiptItemsToFirestore(
-          user.uid,
-          receiptData
-        );
-
-        // Navigate to the new page using the receipt ID
-        router.push(`/receipt/${receiptId}`);
-      } catch (error) {
-        console.error("Error saving receipt:", error);
-        showErrorToast("Error saving receipt data!");
+// Handle confirming and navigating to split page
+const handleConfirm = async () => {
+  if (receiptData) {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error("User not authenticated");
       }
+
+      // Save the receipt items to Firestore and get the receipt ID
+      const receiptId = await saveReceiptItemsToFirestore(user.uid, receiptData);
+      setImageURL(imageURL);
+
+      // Navigate to the split page and pass the image URL via query string
+      router.push(`/receipt/${receiptId}`);
+    } catch (error) {
+      console.error("Error saving receipt:", error);
+      showErrorToast("Error saving receipt data!");
     }
-  };
+  }
+};
 
   return (
+    <ReceiptProvider>
     <div className="items-center z-10 mt-20 pt-20">
       {/* Upload Receipt Section */}
       <div className="max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
@@ -231,6 +231,6 @@ export default function ReceiptPage() {
       </div>
 
       <ToastContainer />
-    </div>
+    </div></ReceiptProvider>
   );
 }

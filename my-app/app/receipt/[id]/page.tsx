@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
-import { useRouter, useParams } from "next/navigation"; // To get the `id` from the URL and handle navigation
+import { useEffect, useState, Suspense, useCallback } from "react";
+import { useParams } from "next/navigation"; // To get the `id` from the URL and handle navigation
 import { doc, getDoc } from "firebase/firestore"; // For Firestore interaction
 import { getAuth, onAuthStateChanged } from "firebase/auth"; // Firebase Auth
 import { db } from "@/lib/firebaseConfig"; // Your Firebase configuration
@@ -9,10 +9,12 @@ import FinalizeSummary from "@/components/finalizeSummary";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
-import {ReceiptData, ReceiptItem} from "@/data/receiptTypes"
+import { ReceiptData, ReceiptItem } from "@/data/receiptTypes";
+import { useReceipt, ReceiptProvider } from "@/context/receiptContext";
 
 function SplitPageContent() {
   const { id } = useParams(); // Get the receipt ID from the URL
+  const { imageUrl } = useReceipt(); // Get the image URL from the context
   const receiptId = Array.isArray(id) ? id[0] : id; // Ensure `id` is a string
   const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
@@ -25,57 +27,68 @@ function SplitPageContent() {
   const [finalizeDisabled, setFinalizeDisabled] = useState<boolean>(false); // Control for disabling Finalize button
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null); // Handle errors
-  const router = useRouter();
+  const auth = getAuth();
+
+  const fetchReceiptData = useCallback(async (userId: string, userName: string) => {
+    try {
+      const receiptRef = doc(db, "expenses", receiptId); // Fetch the receipt based on the ID from params
+      const receiptSnap = await getDoc(receiptRef);
+
+      if (receiptSnap.exists()) {
+        const data = receiptSnap.data() as ReceiptData;
+
+        // Check if the logged-in user is the owner of the receipt
+        if (data.userId !== userId) {
+          toast.error("You are not authorized to view this receipt.");
+          setError("You are not authorized to view this receipt.");
+        } else {
+          setReceiptItems(data.items);
+          setReceiptUrl(data.receiptUrl || null); // Fallback to Firebase URL
+          setSubtotal(data.subtotal || 0);
+          setTax(data.tax || 0);
+          setTotal(data.total || 0);
+
+          setGroupMembers([userName]);
+          const allItemsSet = new Set(data.items.map((item) => item.id));
+          setSplitData({ [userName]: allItemsSet });
+          setFinalizeDisabled(false);
+        }
+      } else {
+        toast.error("No such document exists.");
+        setError("No such document exists.");
+      }
+    } catch (error) {
+      toast.error("Error fetching receipt data.");
+      setError("Error fetching receipt data.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    const auth = getAuth();
-    const fetchReceiptData = async (userId: string) => {
-      try {
-        const receiptRef = doc(db, "expenses", receiptId); // Correctly pass the string `receiptId`
-        const receiptSnap = await getDoc(receiptRef);
-  
-        if (receiptSnap.exists()) {
-          const data = receiptSnap.data() as ReceiptData; // Type-cast Firestore data
-  
-          // Check if the logged-in user is the owner of the receipt
-          if (data.userId !== userId) {
-            toast.error("You are not authorized to view this receipt.");
-            setError("You are not authorized to view this receipt.");
-            router.push("/"); // Redirect to home page or another page
-          } else {
-            setReceiptItems(data.items); // Set receipt items if user is authorized
-            setReceiptUrl(data.receiptUrl || null); // Set receipt URL
-            setSubtotal(data.subtotal || 0); // Set subtotal from Firestore
-            setTax(data.tax || 0); // Set tax from Firestore
-            setTotal(data.total || 0); // Set total from Firestore
-          }
-        } else {
-          toast.error("No such document exists.");
-          setError("No such document exists.");
-        }
-      } catch (error) {
-        toast.error("Error fetching receipt data.");
-        setError("Error fetching receipt data.");
-        console.error("Error fetching receipt data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    // Check if the user is logged in
+    // Check if the user is logged in and load data
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // User is logged in, fetch the receipt data
-        fetchReceiptData(user.uid);
+        const userName = user.displayName?.split(" ")[0] || user.uid;
+
+        if (imageUrl) {
+          // If image URL is available in context, use it directly
+          setReceiptUrl(imageUrl);
+          setGroupMembers([userName]);
+          setFinalizeDisabled(false); // Enable Finalize button
+          setLoading(false); // Stop loading
+        } else {
+          // Fallback to Firebase if no imageUrl is provided in context
+          fetchReceiptData(user.uid, userName);
+        }
       } else {
         toast.error("You need to be logged in to view this page.");
         setError("You need to be logged in to view this page.");
-        router.push("/login"); // Redirect to login if user is not logged in
       }
     });
-  
+
     return () => unsubscribe(); // Cleanup the auth listener on unmount
-  }, [receiptId, router]);
+  }, [auth, imageUrl, fetchReceiptData]);
 
   // Mark changes and enable Finalize button
   const handleAnyChange = () => {
@@ -236,7 +249,9 @@ function SplitPageContent() {
 export default function SplitPage() {
   return (
     <Suspense fallback={<p>Loading split page...</p>}>
-      <SplitPageContent />
+      <ReceiptProvider>
+        <SplitPageContent />
+      </ReceiptProvider>
     </Suspense>
   );
 }
