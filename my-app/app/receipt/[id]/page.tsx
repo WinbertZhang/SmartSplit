@@ -173,7 +173,7 @@ const [total, setTotal] = useState<number>(0);
   }
 
   return (
-    <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-20">
+    <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-20 mb-4">
       <h2 className="text-white text-2xl font-bold mb-6">Receipt Splitter</h2>
 
       {receiptUrl && (

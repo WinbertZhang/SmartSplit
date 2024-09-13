@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebaseConfig";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { fetchUserGroups, Group } from "@/lib/firestoreUtils";
+import { fetchUserGroups, Group } from "@/lib/firebaseUtils";
 import Link from "next/link";
 import { FaReceipt, FaMoneyBillWave, FaChartPie } from "react-icons/fa";
 

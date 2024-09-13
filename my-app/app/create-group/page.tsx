@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createGroup } from "@/lib/firestoreUtils"; // Firestore utility for creating groups
+import { createGroup } from "@/lib/firebaseUtils"; // Firestore utility for creating groups
 import { auth } from "@/lib/firebaseConfig";
 import { sendGroupInvitation } from "@/lib/emailUtil"; // Email service for sending invitations
 

@@ -168,18 +168,15 @@ export default function SplitTable({
         </table>
       </div>
 
-      {/* Line separator */}
-      <hr className="my-4 border-t border-gray-500" />
-
       {/* Display Subtotal, Tax, and Total */}
-      <div className="px-4 py-2 text-white text-lg">
-        <p className="mb-2">
+      <div className="px-8 py-2 bg-gray-700 text-white text-xl">
+        <p className="mb-2 text-right">
           Subtotal: <span>${subtotal.toFixed(2)}</span>
         </p>
-        <p className="mb-2">
+        <p className="mb-2 text-right">
           Tax: <span>${tax.toFixed(2)}</span>
         </p>
-        <p className="font-bold">
+        <p className="font-bold text-right">
           Total: <span>${total.toFixed(2)}</span>
         </p>
       </div>
