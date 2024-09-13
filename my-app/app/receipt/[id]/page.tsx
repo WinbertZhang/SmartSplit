@@ -9,21 +9,7 @@ import FinalizeSummary from "@/components/finalizeSummary";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
-
-interface ReceiptItem {
-  id: number;
-  item: string;
-  price: number;
-}
-
-interface ReceiptData {
-  userId: string; // ID of the user who owns the receipt
-  items: ReceiptItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  receiptUrl?: string; // Add receiptUrl to store image URL
-}
+import {ReceiptData, ReceiptItem} from "@/data/receiptTypes"
 
 function SplitPageContent() {
   const { id } = useParams(); // Get the receipt ID from the URL
@@ -31,8 +17,8 @@ function SplitPageContent() {
   const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [subtotal, setSubtotal] = useState<number>(0);
-const [tax, setTax] = useState<number>(0);
-const [total, setTotal] = useState<number>(0);
+  const [tax, setTax] = useState<number>(0);
+  const [total, setTotal] = useState<number>(0);
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [splitData, setSplitData] = useState<Record<string, Set<number>>>({});
   const [showSummary, setShowSummary] = useState<boolean>(false);

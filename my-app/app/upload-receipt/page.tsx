@@ -17,22 +17,9 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
 import { getAuth } from "firebase/auth";
+import { v4 as uuidv4 } from "uuid";
 
-// Define the structure of a receipt item
-interface ReceiptItem {
-  id: number;
-  item: string;
-  price: number;
-}
-
-// Define the structure of the receipt data
-interface ReceiptData {
-  items: ReceiptItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  receiptUrl?: string;
-}
+import { ReceiptData, ReceiptItem } from "@/data/receiptTypes";
 
 export default function ReceiptPage() {
   const [imageURL, setImageURL] = useState<string | null>(null);
@@ -49,12 +36,16 @@ export default function ReceiptPage() {
     setLoading(true);
 
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
       // Upload the image to Firebase Storage and get the download URL
-      const downloadURL = await uploadImageToFirebaseStorage(uploadedImage);
+      const downloadURL = await uploadImageToFirebaseStorage(uploadedImage, user.uid);
       if (!downloadURL) {
         throw new Error("Failed to upload image");
       }
-
+  
       const cleanedData = await processReceiptImage(uploadedImage);
 
       // Extract Subtotal, Tax, and Total
@@ -88,6 +79,7 @@ export default function ReceiptPage() {
         tax,
         total,
         receiptUrl: downloadURL,
+        userId: user.uid
       };
 
       setReceiptData(receiptDataToSave);

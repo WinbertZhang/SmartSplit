@@ -3,9 +3,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { jsonrepair } from 'jsonrepair';
 
 // Check if the API key is present and throw an error if not
-const apiKey = process.env.GOOGLE_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
-  throw new Error('GOOGLE_API_KEY environment variable is not set.');
+  throw new Error('GEMINI_API_KEY environment variable is not set.');
 }
 
 // Initialize the Google Generative AI client

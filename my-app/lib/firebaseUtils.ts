@@ -11,13 +11,17 @@ import {
   FieldValue,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid";
+import { ReceiptData } from "@/data/receiptTypes";
 
 // Function to upload image to Firebase Storage and return the URL
-export async function uploadImageToFirebaseStorage(imageFile: File): Promise<string | null> {
+export async function uploadImageToFirebaseStorage(imageFile: File, userId: string): Promise<string | null> {
   try {
-    const storageRef = ref(storage, `receipts/${imageFile.name}`); // Create a reference to the image in Firebase Storage
-    await uploadBytes(storageRef, imageFile); // Upload the image
-    const downloadURL = await getDownloadURL(storageRef); // Get the download URL
+    const storageRef = ref(storage, `receipts/${userId}/${uuidv4()}`);
+        await uploadBytes(storageRef, imageFile);
+    const downloadURL = await getDownloadURL(storageRef);
     return downloadURL;
   } catch (error) {
     console.error("Error uploading image to Firebase Storage:", error);
@@ -183,5 +187,37 @@ export const fetchUserGroups = async (userId: string): Promise<Group[]> => {
   } catch (error) {
     console.error("Error fetching user groups:", error);
     return [];
+  }
+};
+
+// Function to check if user is logged in
+export const checkAuthState = (callback: (user: any) => void, redirectToLogin: () => void) => {
+  const auth = getAuth();
+  return onAuthStateChanged(auth, (user) => {
+    if (user) {
+      callback(user);
+    } else {
+      redirectToLogin();
+    }
+  });
+};
+
+// Function to fetch receipt data from Firestore
+export const fetchReceiptData = async (receiptId: string, userId: string): Promise<ReceiptData> => {
+  try {
+    const receiptRef = doc(db, "expenses", receiptId);
+    const receiptSnap = await getDoc(receiptRef);
+
+    if (receiptSnap.exists()) {
+      const data = receiptSnap.data() as ReceiptData; // Type-cast Firestore data
+      if (data.userId !== userId) {
+        throw new Error("Unauthorized");
+      }
+      return data;
+    } else {
+      throw new Error("No such document");
+    }
+  } catch (error) {
+    throw error;
   }
 };
