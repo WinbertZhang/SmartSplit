@@ -9,6 +9,7 @@ import { processReceiptImage } from "@/components/receiptProcessor";
 import { saveReceiptToFirebase } from "@/lib/firestoreUtils";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css'; // Import Toastify CSS
+import { useRouter } from "next/navigation";
 
 // Define the structure of a receipt item
 interface ReceiptItem {
@@ -30,6 +31,7 @@ export default function ReceiptPage() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const router = useRouter(); // For navigation
 
   // Handle image upload and processing
   const handleImageUpload = async (uploadedImage: File) => {
@@ -106,29 +108,17 @@ export default function ReceiptPage() {
     }
   };
 
-  // Handle submitting the receipt data to Firebase
-  const handleSubmit = async () => {
-    const confirmation = window.confirm("Are you sure you want to submit?");
-    if (confirmation && receiptData) {
-      try {
-        await saveReceiptToFirebase(receiptData);
-        showSuccessToast("Receipt data saved successfully!");
-        setIsSubmitted(true);
-
-        setTimeout(() => {
-          resetPage();
-        }, 3000);
-      } catch (error) {
-        console.error("Error saving to Firebase:", error);
-        showErrorToast("Error saving receipt data!");
-      }
+  // Handle confirming and navigating to Split Page
+  const handleConfirm = () => {
+    if (receiptData) {
+      const router = useRouter();
+  
+      // Create a URLSearchParams object to encode the query string
+      const queryString = new URLSearchParams({ data: JSON.stringify(receiptData) }).toString();
+  
+      // Navigate to the split page with the query string
+      router.push(`/split?${queryString}`);
     }
-  };
-
-  const resetPage = () => {
-    setImageURL(null);
-    setReceiptData(null);
-    setIsSubmitted(false);
   };
 
   return (
@@ -178,11 +168,10 @@ export default function ReceiptPage() {
           {!loading && receiptData && (
             <div className="p-6">
               <button
-                onClick={handleSubmit}
+                onClick={handleConfirm}
                 className="w-full bg-[#353B47] text-white px-6 py-3 text-lg font-semibold rounded-lg hover:bg-[#4A4F5C] transition-all shadow-lg"
-                disabled={isSubmitted}
               >
-                Submit
+                Confirm
               </button>
             </div>
           )}
