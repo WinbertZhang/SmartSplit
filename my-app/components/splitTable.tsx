@@ -16,6 +16,9 @@ interface SplitTableProps {
   onRemoveMember: (memberName: string) => void;
   onRenameMember: (oldName: string, newName: string) => void;
   onFinalizeDisabledChange: (disabled: boolean) => void; // Added to notify parent about button state
+  subtotal: number;
+  tax: number;
+  total: number;
 }
 
 export default function SplitTable({
@@ -26,6 +29,9 @@ export default function SplitTable({
   onRemoveMember,
   onRenameMember,
   onFinalizeDisabledChange, // Added for disabling the finalize button
+  subtotal,
+  tax,
+  total,
 }: SplitTableProps) {
   const [editingMember, setEditingMember] = useState<string | null>(null);
   const [newMemberName, setNewMemberName] = useState("");
@@ -160,6 +166,22 @@ export default function SplitTable({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Line separator */}
+      <hr className="my-4 border-t border-gray-500" />
+
+      {/* Display Subtotal, Tax, and Total */}
+      <div className="px-4 py-2 text-white text-lg">
+        <p className="mb-2">
+          Subtotal: <span>${subtotal.toFixed(2)}</span>
+        </p>
+        <p className="mb-2">
+          Tax: <span>${tax.toFixed(2)}</span>
+        </p>
+        <p className="font-bold">
+          Total: <span>${total.toFixed(2)}</span>
+        </p>
       </div>
     </div>
   );

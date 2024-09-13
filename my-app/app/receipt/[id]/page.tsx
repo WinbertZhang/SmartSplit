@@ -30,6 +30,9 @@ function SplitPageContent() {
   const receiptId = Array.isArray(id) ? id[0] : id; // Ensure `id` is a string
   const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [subtotal, setSubtotal] = useState<number>(0);
+const [tax, setTax] = useState<number>(0);
+const [total, setTotal] = useState<number>(0);
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [splitData, setSplitData] = useState<Record<string, Set<number>>>({});
   const [showSummary, setShowSummary] = useState<boolean>(false);
@@ -44,10 +47,10 @@ function SplitPageContent() {
       try {
         const receiptRef = doc(db, "expenses", receiptId); // Correctly pass the string `receiptId`
         const receiptSnap = await getDoc(receiptRef);
-
+  
         if (receiptSnap.exists()) {
           const data = receiptSnap.data() as ReceiptData; // Type-cast Firestore data
-
+  
           // Check if the logged-in user is the owner of the receipt
           if (data.userId !== userId) {
             toast.error("You are not authorized to view this receipt.");
@@ -56,6 +59,9 @@ function SplitPageContent() {
           } else {
             setReceiptItems(data.items); // Set receipt items if user is authorized
             setReceiptUrl(data.receiptUrl || null); // Set receipt URL
+            setSubtotal(data.subtotal || 0); // Set subtotal from Firestore
+            setTax(data.tax || 0); // Set tax from Firestore
+            setTotal(data.total || 0); // Set total from Firestore
           }
         } else {
           toast.error("No such document exists.");
@@ -69,7 +75,7 @@ function SplitPageContent() {
         setLoading(false);
       }
     };
-
+  
     // Check if the user is logged in
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -81,7 +87,7 @@ function SplitPageContent() {
         router.push("/login"); // Redirect to login if user is not logged in
       }
     });
-
+  
     return () => unsubscribe(); // Cleanup the auth listener on unmount
   }, [receiptId, router]);
 
@@ -190,7 +196,10 @@ function SplitPageContent() {
             splitData={splitData}
             onRemoveMember={handleRemoveMember}
             onRenameMember={handleRenameMember}
-            onFinalizeDisabledChange={handleFinalizeDisabledChange} // Added here
+            onFinalizeDisabledChange={handleFinalizeDisabledChange}
+            subtotal={subtotal}
+            tax={tax}
+            total={total}
           />
           <div className="my-6">
             <input
