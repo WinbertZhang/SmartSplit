@@ -15,7 +15,6 @@ interface ReceiptItem {
   id: number;
   item: string;
   price: number;
-  split: boolean;
 }
 
 // Define the structure of the receipt data
@@ -56,7 +55,6 @@ export default function ReceiptPage() {
           id: index + 1,
           item: itemName,
           price: parseFloat((itemPrice as string).replace(/[^\d.]/g, "")) || 0,
-          split: false,
         })
       );
 
@@ -67,16 +65,6 @@ export default function ReceiptPage() {
     }
 
     setLoading(false);
-  };
-
-  // Handle toggling the split status of an item
-  const toggleSplit = (id: number) => {
-    if (receiptData) {
-      const updatedItems = receiptData.items.map((item) =>
-        item.id === id ? { ...item, split: !item.split } : item
-      );
-      setReceiptData({ ...receiptData, items: updatedItems });
-    }
   };
 
   // Handle editing an item
@@ -146,7 +134,7 @@ export default function ReceiptPage() {
   return (
     <div className="items-center z-10 mt-20 pt-20">
       {/* Upload Receipt Section */}
-      <div className="max-w-2xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
+      <div className="max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
         {/* Title */}
         <h2 className="text-white text-2xl font-bold mb-6">Upload Receipt</h2>
 
@@ -178,7 +166,6 @@ export default function ReceiptPage() {
                   subtotal={receiptData.subtotal}
                   tax={receiptData.tax}
                   total={receiptData.total}
-                  onToggleSplit={toggleSplit}
                   onEditItem={editItem}
                   onRemoveItem={removeItem}
                   onReorderItems={reorderItems}

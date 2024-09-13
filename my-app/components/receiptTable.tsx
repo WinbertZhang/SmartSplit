@@ -1,13 +1,17 @@
-import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
-import { FaTimes, FaGripLines, FaPlus } from "react-icons/fa"; // Import the new plus icon
-import React from 'react';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "react-beautiful-dnd";
+import { FaTimes, FaPlus } from "react-icons/fa"; // Import the new plus icon
+import React from "react";
 
 // Define the structure of a receipt item
 interface ReceiptItem {
   id: number;
   item: string;
   price: number;
-  split: boolean;
 }
 
 interface ReceiptTableProps {
@@ -15,10 +19,15 @@ interface ReceiptTableProps {
   subtotal: number;
   tax: number;
   total: number;
-  onToggleSplit: (id: number) => void;
   onEditItem: (
     id: number,
-    updatedItem: Partial<{ item: string; price: number; subtotal?: number; tax?: number; total?: number }>
+    updatedItem: Partial<{
+      item: string;
+      price: number;
+      subtotal?: number;
+      tax?: number;
+      total?: number;
+    }>
   ) => void;
   onRemoveItem: (id: number) => void;
   onReorderItems: (items: ReceiptItem[]) => void;
@@ -30,15 +39,14 @@ export default function ReceiptTable({
   subtotal,
   tax,
   total,
-  onToggleSplit,
   onEditItem,
   onRemoveItem,
   onReorderItems,
   onAddNewItem,
 }: ReceiptTableProps) {
   // Local state for new item inputs
-  const [newItemName, setNewItemName] = React.useState('');
-  const [newItemPrice, setNewItemPrice] = React.useState('');
+  const [newItemName, setNewItemName] = React.useState("");
+  const [newItemPrice, setNewItemPrice] = React.useState("");
 
   // Handle the drag-and-drop reorder event
   const handleOnDragEnd = (result: DropResult) => {
@@ -64,12 +72,11 @@ export default function ReceiptTable({
         id: Date.now(), // Use a timestamp for unique id
         item: newItemName,
         price: parseFloat(newItemPrice),
-        split: false,
       };
 
       onAddNewItem(newItem);
-      setNewItemName(''); // Reset the input fields
-      setNewItemPrice('');
+      setNewItemName(""); // Reset the input fields
+      setNewItemPrice("");
     }
   };
 
@@ -86,15 +93,21 @@ export default function ReceiptTable({
               <thead>
                 <tr className="bg-[#1A2535]">
                   <th className="py-3 px-4 text-left font-medium text-white"></th>
-                  <th className="py-3 px-4 text-left font-medium text-white"></th>
-                  <th className="py-3 px-4 text-left font-medium text-white">Item</th>
-                  <th className="py-3 px-4 text-left font-medium text-white">Price</th>
-                  <th className="py-3 px-4 text-center font-medium text-white">Split?</th>
+                  <th className="py-3 px-4 text-left font-medium text-white">
+                    Item
+                  </th>
+                  <th className="py-3 px-4 text-right font-medium text-white">
+                    Price
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {receiptItems.map((item, index) => (
-                  <Draggable key={item.id.toString()} draggableId={item.id.toString()} index={index}>
+                  <Draggable
+                    key={item.id.toString()}
+                    draggableId={item.id.toString()}
+                    index={index}
+                  >
                     {(provided) => (
                       <tr
                         key={item.id}
@@ -109,30 +122,23 @@ export default function ReceiptTable({
                           </button>
                         </td>
                         <td className="py-3 px-4">
-                          <FaGripLines className="cursor-move text-gray-400" {...provided.dragHandleProps} />
-                        </td>
-                        <td className="py-3 px-4">
                           <input
                             type="text"
                             value={item.item}
-                            onChange={(e) => handleItemEdit(item.id, "item", e.target.value)}
-                            className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
+                            onChange={(e) =>
+                              handleItemEdit(item.id, "item", e.target.value)
+                            }
+                            className="bg-transparent text-white border-gray-400 focus:outline-none w-full"
                           />
                         </td>
                         <td className="py-3 px-4">
                           <input
                             type="text"
-                            value={item.price.toFixed(2)}
-                            onChange={(e) => handleItemEdit(item.id, "price", e.target.value)}
-                            className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
-                          />
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <input
-                            type="checkbox"
-                            checked={item.split}
-                            onChange={() => onToggleSplit(item.id)}
-                            className="w-5 h-5 text-[#35B2EB] border-[#35B2EB] rounded"
+                            value={'$' + item.price.toFixed(2)}
+                            onChange={(e) =>
+                              handleItemEdit(item.id, "price", e.target.value)
+                            }
+                            className="bg-transparent text-white w-full text-right focus:outline-none"
                           />
                         </td>
                       </tr>
@@ -158,7 +164,9 @@ export default function ReceiptTable({
         <input
           type="text"
           value={newItemPrice}
-          onChange={(e) => setNewItemPrice(e.target.value.replace(/[^\d.]/g, ""))}
+          onChange={(e) =>
+            setNewItemPrice(e.target.value.replace(/[^\d.]/g, ""))
+          }
           placeholder="Price"
           className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
         />
@@ -178,7 +186,10 @@ export default function ReceiptTable({
             type="text"
             value={subtotal.toFixed(2)}
             onChange={(e) =>
-              onEditItem(0, { subtotal: parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0 })
+              onEditItem(0, {
+                subtotal:
+                  parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0,
+              })
             }
             className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
           />
@@ -189,7 +200,9 @@ export default function ReceiptTable({
             type="text"
             value={tax.toFixed(2)}
             onChange={(e) =>
-              onEditItem(0, { tax: parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0 })
+              onEditItem(0, {
+                tax: parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0,
+              })
             }
             className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
           />
@@ -200,7 +213,9 @@ export default function ReceiptTable({
             type="text"
             value={total.toFixed(2)}
             onChange={(e) =>
-              onEditItem(0, { total: parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0 })
+              onEditItem(0, {
+                total: parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0,
+              })
             }
             className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
           />
