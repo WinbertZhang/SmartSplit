@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation"; // Move this to the top of the component
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import UploadButton from "@/components/uploadButton";
 import Image from "next/image";
 import {
@@ -15,25 +15,34 @@ import {
   saveReceiptItemsToFirestore,
 } from "@/lib/firebaseUtils";
 import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
-import { getAuth } from "firebase/auth";
-import { v4 as uuidv4 } from "uuid";
-
+import "react-toastify/dist/ReactToastify.css";
+import { getAuth, onAuthStateChanged } from "firebase/auth"; // Add auth state change listener
 import { ReceiptData, ReceiptItem } from "@/data/receiptTypes";
-import { ReceiptProvider } from "@/context/receiptContext";
+import { FaReceipt } from "react-icons/fa";
 
 export default function ReceiptPage() {
   const [imageURL, setImageURL] = useState<string | null>(null);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
   const router = useRouter();
   const auth = getAuth();
 
+  // Check if the user is logged in, otherwise redirect to the login page
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // User not logged in, redirect to login page and pass the return URL
+        router.push(`/login?returnUrl=/upload-receipt`);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [auth, router]);
+
   // Handle image upload and processing
   const handleImageUpload = async (uploadedImage: File) => {
-    setImageURL(URL.createObjectURL(uploadedImage)); // Show image preview
+    setImageURL(URL.createObjectURL(uploadedImage));
     setLoading(true);
 
     try {
@@ -41,12 +50,11 @@ export default function ReceiptPage() {
       if (!user) {
         throw new Error("User not authenticated");
       }
-      // Upload the image to Firebase Storage and get the download URL
       const downloadURL = await uploadImageToFirebaseStorage(uploadedImage, user.uid);
       if (!downloadURL) {
         throw new Error("Failed to upload image");
       }
-  
+
       const cleanedData = await processReceiptImage(uploadedImage);
 
       // Extract Subtotal, Tax, and Total
@@ -80,13 +88,11 @@ export default function ReceiptPage() {
         tax,
         total,
         receiptUrl: downloadURL,
-        userId: user.uid
+        userId: user.uid,
       };
 
       setReceiptData(receiptDataToSave);
-      showSuccessToast(
-        "Receipt data and image URL saved to Firebase successfully!"
-      );
+      showSuccessToast("Receipt data and image URL saved to Firebase successfully!");
     } catch (error) {
       console.error("Error processing receipt:", error);
       showErrorToast("Error processing receipt!");
@@ -95,52 +101,46 @@ export default function ReceiptPage() {
     setLoading(false);
   };
 
-  // Handle editing an item
+  const recalculateTotals = (items: ReceiptItem[], tax: number) => {
+    const subtotal = items.reduce((acc, item) => acc + item.price, 0);
+    const total = subtotal + tax;
+    return { subtotal, total };
+  };
+
   const editItem = (
     id: number,
-    updatedItem: Partial<{
-      item: string;
-      price: number;
-      subtotal?: number;
-      tax?: number;
-      total?: number;
-    }>
+    updatedItem: Partial<{ item: string; price: number; subtotal?: number; tax?: number; total?: number; }>
   ) => {
     if (receiptData) {
       if (id === 0) {
-        // Update subtotal, tax, or total
-        setReceiptData({ ...receiptData, ...updatedItem });
+        const { subtotal, total } = recalculateTotals(receiptData.items, updatedItem.tax || receiptData.tax);
+        setReceiptData({ ...receiptData, ...updatedItem, subtotal, total });
       } else {
         const updatedItems = receiptData.items.map((item) =>
           item.id === id ? { ...item, ...updatedItem } : item
         );
-        setReceiptData({ ...receiptData, items: updatedItems });
+        const { subtotal, total } = recalculateTotals(updatedItems, receiptData.tax);
+        setReceiptData({ ...receiptData, items: updatedItems, subtotal, total });
       }
     }
   };
 
-  // Handle removing an item
   const removeItem = (id: number) => {
     if (receiptData) {
       const updatedItems = receiptData.items.filter((item) => item.id !== id);
-      setReceiptData({ ...receiptData, items: updatedItems });
+      const { subtotal, total } = recalculateTotals(updatedItems, receiptData.tax);
+      setReceiptData({ ...receiptData, items: updatedItems, subtotal, total });
     }
   };
 
-  // Handle reordering items
-  const reorderItems = (items: ReceiptItem[]) => {
-    setReceiptData((prevState) => (prevState ? { ...prevState, items } : null));
-  };
-
-  // Handle adding a new item
   const addNewItem = (newItem: ReceiptItem) => {
     if (receiptData) {
       const updatedItems = [...receiptData.items, newItem];
-      setReceiptData({ ...receiptData, items: updatedItems });
+      const { subtotal, total } = recalculateTotals(updatedItems, receiptData.tax);
+      setReceiptData({ ...receiptData, items: updatedItems, subtotal, total });
     }
   };
 
-// Handle confirming and navigating to split page
 const handleConfirm = async () => {
   if (receiptData) {
     try {
@@ -148,8 +148,6 @@ const handleConfirm = async () => {
       if (!user) {
         throw new Error("User not authenticated");
       }
-
-      // Save the receipt items to Firestore and get the receipt ID
       const receiptId = await saveReceiptItemsToFirestore(user.uid, receiptData);
       setImageURL(imageURL);
 
@@ -163,20 +161,32 @@ const handleConfirm = async () => {
 };
 
   return (
-    <ReceiptProvider>
     <div className="items-center z-10 mt-20 pt-20">
-      {/* Upload Receipt Section */}
+      <div className="text-center">
+        <h2 className="text-4xl font-bold text-white mb-2">Upload Receipt</h2>
+        <p className="text-gray-400 mb-6">Upload your receipt to split expenses easily.</p>
+      </div>
       <div className="max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
-        {/* Title */}
-        <h2 className="text-white text-2xl font-bold mb-6">Upload Receipt</h2>
 
         <div className="my-6">
-          {/* Upload Button Centered */}
           <div className="flex justify-center">
-            <UploadButton onUpload={handleImageUpload} />
+            <button
+              className="bg-[#212C40] text-white p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
+              onClick={() => document.getElementById('file-input')?.click()} // Trigger the file input dialog
+            >
+              <FaReceipt className="text-gray-400 hover:text-white text-6xl mb-4 transition-colors duration-200" />
+              <span className="text-lg font-semibold">Upload Receipt</span>
+            </button>
+            <input
+              id="file-input"
+              type="file"
+              accept="image/"
+              onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])}
+              className="hidden"
+            />
           </div>
-
-          {/* Show the image preview if available */}
+        </div>
+        <div className="my-6">
           {imageURL && (
             <div className="my-6">
               <h2 className="text-xl font-semibold mb-4 text-white">
@@ -195,12 +205,9 @@ const handleConfirm = async () => {
 
         <div className="m-4">
           <div className="text-white text-xl font-semibold">Receipt Items</div>
-
           <div className="p-6">
             {loading ? (
-              <p className="text-gray-400">
-                Processing your receipt. Please wait...
-              </p>
+              <p className="text-gray-400">Processing your receipt. Please wait...</p>
             ) : (
               receiptData && (
                 <ReceiptTable
@@ -210,7 +217,6 @@ const handleConfirm = async () => {
                   total={receiptData.total}
                   onEditItem={editItem}
                   onRemoveItem={removeItem}
-                  onReorderItems={reorderItems}
                   onAddNewItem={addNewItem}
                 />
               )
@@ -220,7 +226,7 @@ const handleConfirm = async () => {
           {!loading && receiptData && (
             <div className="p-6">
               <button
-                onClick={handleConfirm} // Navigate to Split page
+                onClick={handleConfirm}
                 className="w-full bg-[#FF6347] text-white px-6 py-3 mt-4 text-lg font-semibold rounded-lg hover:bg-[#FF7F50] transition-all shadow-lg"
               >
                 Confirm and Split
@@ -231,6 +237,6 @@ const handleConfirm = async () => {
       </div>
 
       <ToastContainer />
-    </div></ReceiptProvider>
+    </div>
   );
 }

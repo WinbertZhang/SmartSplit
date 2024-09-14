@@ -63,7 +63,7 @@ function SplitPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [receiptId]);
 
   useEffect(() => {
     // Check if the user is logged in and load data
@@ -218,11 +218,10 @@ function SplitPageContent() {
           </div>{" "}
           <button
             onClick={handleFinalize}
-            className={`text-white px-4 py-2 mt-4 rounded-lg ${
-              finalizeDisabled
+            className={`text-white px-4 py-2 mt-4 rounded-lg ${finalizeDisabled
                 ? "bg-gray-500 cursor-not-allowed"
                 : "bg-green-500 hover:bg-green-600"
-            }`}
+              }`}
             disabled={finalizeDisabled} // Disable based on state
           >
             Finalize
@@ -238,6 +237,9 @@ function SplitPageContent() {
           receiptItems={receiptItems}
           groupMembers={groupMembers}
           splitData={splitData}
+          tax={tax}
+          subtotal={subtotal}
+          total={total}
         />
       )}
 
@@ -248,10 +250,10 @@ function SplitPageContent() {
 
 export default function SplitPage() {
   return (
-    <Suspense fallback={<p>Loading split page...</p>}>
-      <ReceiptProvider>
+    <ReceiptProvider>
+      <Suspense fallback={<p>Loading split page...</p>}>
         <SplitPageContent />
-      </ReceiptProvider>
-    </Suspense>
+      </Suspense>
+    </ReceiptProvider>
   );
 }
