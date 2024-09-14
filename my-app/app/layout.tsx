@@ -4,7 +4,7 @@ import { Inter } from "next/font/google";
 import NavBar from "@/components/navBar";
 
 export const metadata: Metadata = {
-  title: "SplitSmart",
+  title: "Smart Split",
   description: "Split expenses with your friends",
 };
 

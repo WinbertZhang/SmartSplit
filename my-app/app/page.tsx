@@ -27,11 +27,8 @@ export default function LandingPage() {
 
           {/* Action Buttons */}
           <div className="flex space-x-4">
-            <Link href="/receipt" className="block border border-green-400 bg-opacity-10 bg-[#212C40] text-white px-6 py-3 rounded-lg hover:bg-[#1A2535] transition-colors">
+            <Link href="/upload-receipt" className="block border border-green-400 bg-opacity-10 bg-[#212C40] text-white px-6 py-3 rounded-lg hover:bg-[#1A2535] transition-colors">
               Upload Receipt
-            </Link>
-            <Link href="/dashboard" className="block border border-green-400 bg-opacity-10 bg-[#212C40] text-white px-6 py-3 rounded-lg hover:bg-[#1A2535] transition-colors">
-              Dashboard
             </Link>
           </div>
         </div>
