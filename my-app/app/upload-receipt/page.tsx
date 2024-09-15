@@ -198,17 +198,15 @@ export default function ReceiptPage() {
   const handleConfirm = async () => {
     if (receiptData) {
       try {
+        const { subtotal, total } = recalculateTotals(receiptData.items, receiptData.tax || 0);
+        const updatedReceiptData = { ...receiptData, subtotal, total };
+  
         const user = auth.currentUser;
         if (!user) {
           throw new Error("User not authenticated");
         }
-        const receiptId = await saveReceiptItemsToFirestore(
-          user.uid,
-          receiptData
-        );
+        const receiptId = await saveReceiptItemsToFirestore(user.uid, updatedReceiptData);
         setImageURL(imageURL);
-
-        // Navigate to the split page and pass the image URL via query string
         router.push(`/receipt/${receiptId}`);
       } catch (error) {
         console.error("Error saving receipt:", error);
@@ -216,6 +214,7 @@ export default function ReceiptPage() {
       }
     }
   };
+  
 
   return (
     <div className="items-center z-10 mt-20 pt-20">
