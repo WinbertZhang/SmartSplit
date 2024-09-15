@@ -41,6 +41,7 @@ export default function ReceiptPage() {
   }, [auth, router]);
 
   // Handle image upload and processing
+  // THIS HERE HANDLES GEMINI CALL AND SAVES TO FIREBASE
   const handleImageUpload = async (uploadedImage: File) => {
     setImageURL(URL.createObjectURL(uploadedImage));
     setLoading(true);
@@ -68,6 +69,8 @@ export default function ReceiptPage() {
         ? parseFloat(cleanedData.Total.replace(/[^\d.]/g, ""))
         : 0;
 
+      const createdAt = new Date();
+
       // Filter out non-item keys like "Subtotal", "Tax", and "Total"
       const filteredData = Object.entries(cleanedData).filter(
         ([key]) => !["Subtotal", "Tax", "Total"].includes(key)
@@ -79,6 +82,7 @@ export default function ReceiptPage() {
           id: index + 1,
           item: itemName,
           price: parseFloat((itemPrice as string).replace(/[^\d.]/g, "")) || 0,
+          splitters: [],
         })
       );
 
@@ -89,6 +93,8 @@ export default function ReceiptPage() {
         total,
         receiptUrl: downloadURL,
         userId: user.uid,
+        createdAt,
+        splitDetails: [],
       };
 
       setReceiptData(receiptDataToSave);

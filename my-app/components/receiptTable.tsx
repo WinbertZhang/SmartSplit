@@ -56,6 +56,7 @@ export default function ReceiptTable({
         id: Date.now(),
         item: newItemName,
         price: parseFloat(newItemPrice),
+        splitters: [],
       };
       onAddNewItem(newItem);
       setNewItemName("");

@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaTimes, FaEdit } from "react-icons/fa";
-
-// Define types for the props
-interface ReceiptItem {
-  id: number;
-  item: string;
-  price: number;
-}
+import { ReceiptItem } from "@/data/receiptTypes";
 
 interface SplitTableProps {
   receiptItems: ReceiptItem[];
@@ -20,7 +14,6 @@ interface SplitTableProps {
   tax: number;
   total: number;
 }
-
 export default function SplitTable({
   receiptItems,
   groupMembers,
@@ -28,7 +21,7 @@ export default function SplitTable({
   splitData,
   onRemoveMember,
   onRenameMember,
-  onFinalizeDisabledChange, // Added for disabling the finalize button
+  onFinalizeDisabledChange,
   subtotal,
   tax,
   total,
@@ -87,6 +80,27 @@ export default function SplitTable({
     }));
   };
 
+  // Handle selecting all members for an item
+  const handleToggleAllForItem = (itemId: number) => {
+    const allMembersSelected = groupMembers.every((member) =>
+      splitData[member]?.has(itemId)
+    );
+
+    groupMembers.forEach((member) => {
+      if (allMembersSelected) {
+        // Uncheck all members for this item
+        if (splitData[member]?.has(itemId)) {
+          onToggleSplit(itemId, member);
+        }
+      } else {
+        // Select all members for this item
+        if (!splitData[member]?.has(itemId)) {
+          onToggleSplit(itemId, member);
+        }
+      }
+    });
+  };
+
   return (
     <div className="rounded-lg shadow-lg overflow-hidden bg-[#353B47]">
       <div className="overflow-x-auto">
@@ -95,6 +109,8 @@ export default function SplitTable({
             <tr className="bg-[#1A2535]">
               <th className="py-3 px-4 text-left font-medium text-white">Item</th>
               <th className="py-3 px-4 text-left font-medium text-white">Price</th>
+              {/* New column for "Select All" for each item */}
+              <th className="py-3 px-4 text-center font-medium text-white">Select All</th>
               {groupMembers.map((member, index) => {
                 const color = colors[index % colors.length];
                 return (
@@ -146,6 +162,16 @@ export default function SplitTable({
               <tr key={item.id} className="border-t border-gray-600 hover:bg-[#4A4F5C]">
                 <td className="py-3 px-4 text-start">{item.item}</td>
                 <td className="py-3 px-4 text-start">${item.price.toFixed(2)}</td>
+                {/* New checkbox for selecting all members for this item */}
+                <td className="py-3 px-4 text-center">
+                  <input
+                    type="checkbox"
+                    onChange={() => handleToggleAllForItem(item.id)}
+                    checked={groupMembers.every((member) =>
+                      splitData[member]?.has(item.id)
+                    )}
+                  />
+                </td>
                 {groupMembers.map((member, index) => {
                   const color = colors[index % colors.length];
                   return (

@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
 import { ReceiptData, ReceiptItem } from "@/data/receiptTypes";
 import { useReceipt, ReceiptProvider } from "@/context/receiptContext";
+import { saveSplitToFirestore } from "@/lib/firebaseUtils";
 
 function SplitPageContent() {
   const { id } = useParams(); // Get the receipt ID from the URL
@@ -27,6 +28,7 @@ function SplitPageContent() {
   const [finalizeDisabled, setFinalizeDisabled] = useState<boolean>(false); // Control for disabling Finalize button
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null); // Handle errors
+  const [memberOwedAmounts, setMemberOwedAmounts] = useState<Record<string, number>>({});
   const auth = getAuth();
 
   const fetchReceiptData = useCallback(async (userId: string, userName: string) => {
@@ -124,9 +126,14 @@ function SplitPageContent() {
       toast.error("You can't add more than 10 members!");
       return;
     }
+    if (groupMembers.includes(newMember)) {
+      toast.error("Member already exists!"); // Show error if duplicate name
+      return;
+    }
     setGroupMembers([...groupMembers, newMember]);
     handleAnyChange(); // Mark change and enable Finalize
   };
+
 
   // Remove a group member
   const handleRemoveMember = (memberName: string) => {
@@ -141,6 +148,11 @@ function SplitPageContent() {
 
   // Rename a group member
   const handleRenameMember = (oldName: string, newName: string) => {
+    if (groupMembers.includes(newName)) {
+      toast.error("Member already exists!"); // Show error if duplicate name
+      return;
+    }
+
     setGroupMembers((prevMembers) =>
       prevMembers.map((member) => (member === oldName ? newName : member))
     );
@@ -152,12 +164,53 @@ function SplitPageContent() {
       return updatedData;
     });
   };
-
-  // Finalize the split and show summary
-  const handleFinalize = () => {
+  const handleFinalize = async () => {
+    const memberOwedAmounts: Record<string, number> = {};
+  
+    // Prepare updated items with splitters
+    const updatedItems = receiptItems.map((item) => ({
+      ...item,
+      splitters: groupMembers.filter((member) => splitData[member]?.has(item.id)), // Add splitters
+    }));
+  
+    // Calculate the amount each member owes based on item splits
+    receiptItems.forEach((item) => {
+      const membersSharingItem = groupMembers.filter(
+        (member) => splitData[member]?.has(item.id)
+      );
+      const splitCost = item.price / membersSharingItem.length;
+      membersSharingItem.forEach((member) => {
+        memberOwedAmounts[member] = (memberOwedAmounts[member] || 0) + splitCost;
+      });
+    });
+  
+    // Calculate each member's share of the tax proportionally based on the subtotal they owe
+    const memberOwedWithTax: Record<string, number> = {};
+    Object.keys(memberOwedAmounts).forEach((member) => {
+      const memberSubtotalShare = memberOwedAmounts[member];
+      const memberTaxShare = (memberSubtotalShare / subtotal) * tax;
+      memberOwedWithTax[member] = memberSubtotalShare + memberTaxShare;
+    });
+  
+    // Create the split details array to be saved to Firestore
+    const splitDetails = groupMembers.map((member) => ({
+      name: member,
+      amount: memberOwedWithTax[member],
+    }));
+  
+    // Save the split details and items with splitters to Firestore
+    try {
+      await saveSplitToFirestore(receiptId, splitDetails, updatedItems); // Save splitters and amounts
+      toast.success("Split details saved successfully!"); // Show success toast
+    } catch (error) {
+      toast.error("Error saving split details to Firestore."); // Show error toast
+    }
+  
+    // Set the calculated amounts and show the summary
+    setMemberOwedAmounts(memberOwedWithTax); // Update the state with the owed amounts
     setShowSummary(true); // Show summary
     setFinalizeDisabled(true); // Disable the finalize button
-  };
+  };  
 
   const handleFinalizeDisabledChange = (disabled: boolean) => {
     setFinalizeDisabled(disabled);
@@ -200,11 +253,11 @@ function SplitPageContent() {
             tax={tax}
             total={total}
           />
-          <div className="my-6">
+          <div className="my-6 flex justify-center items-center">
             <input
               type="text"
               placeholder="Add new group member"
-              className="bg-transparent text-lg text-white border-b border-gray-400 focus:outline-none"
+              className="bg-transparent text-lg text-white border-b border-gray-400 focus:outline-none mr-2"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const newMember = (e.target as HTMLInputElement).value.trim();
@@ -214,13 +267,29 @@ function SplitPageContent() {
                   }
                 }
               }}
+              id="new-member-input" // Add an ID to target the input field
             />
-          </div>{" "}
+            <button
+              onClick={() => {
+                const input = document.getElementById('new-member-input') as HTMLInputElement;
+                const newMember = input.value.trim();
+                if (newMember) {
+                  handleAddMember(newMember);
+                  input.value = ""; // Clear the input field after adding
+                }
+              }}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+            >
+              Add
+            </button>
+          </div>
+
+          {" "}
           <button
             onClick={handleFinalize}
             className={`text-white px-4 py-2 mt-4 rounded-lg ${finalizeDisabled
-                ? "bg-gray-500 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-600"
+              ? "bg-gray-500 cursor-not-allowed"
+              : "bg-green-500 hover:bg-green-600"
               }`}
             disabled={finalizeDisabled} // Disable based on state
           >
@@ -234,12 +303,8 @@ function SplitPageContent() {
       {/* Show FinalizeSummary only after finalization */}
       {showSummary && (
         <FinalizeSummary
-          receiptItems={receiptItems}
           groupMembers={groupMembers}
-          splitData={splitData}
-          tax={tax}
-          subtotal={subtotal}
-          total={total}
+          memberOwedAmounts={memberOwedAmounts}
         />
       )}
 
