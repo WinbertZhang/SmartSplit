@@ -3,14 +3,18 @@
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebaseConfig";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { fetchUserExpenses } from "@/lib/firebaseUtils"; // Import the utility function
+import { fetchUserExpenses, deleteExpenseFromFirestore } from "@/lib/firebaseUtils"; // Import the delete function
 import { useRouter } from "next/navigation"; // Use the `useRouter` from Next.js 14 app router
 import Image from "next/image";
 import { ReceiptData } from "@/data/receiptTypes"; // Import ReceiptData type
+import { FaTrashAlt } from "react-icons/fa"; // Import trash can icon
 
 export default function PastSplits() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [expenses, setExpenses] = useState<ReceiptData[]>([]);
+  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]); // Track selected expenses
+  const [isSelectMode, setIsSelectMode] = useState(false); // Toggle for select mode
+  const [sortOrder, setSortOrder] = useState<'Newest' | 'Oldest'>('Newest'); // Track the sort order
   const router = useRouter(); // For routing to individual expense pages
 
   // Fetch expenses for the logged-in user
@@ -39,8 +43,60 @@ export default function PastSplits() {
     return () => unsubscribe();
   }, [router]);
 
+  // Handle sorting expenses by createdAt (either Oldest or Newest)
+  const sortExpenses = (order: 'Newest' | 'Oldest') => {
+    const sortedExpenses = [...expenses].sort((a, b) => {
+      if (order === 'Newest') {
+        return b.createdAt.getTime() - a.createdAt.getTime(); // Newest first
+      } else {
+        return a.createdAt.getTime() - b.createdAt.getTime(); // Oldest first
+      }
+    });
+    setExpenses(sortedExpenses);
+    setSortOrder(order); // Update sort order
+  };
+
   const handleExpenseClick = (expenseId: string) => {
-    router.push(`/past-splits/${expenseId}`); // Navigate to individual expense page
+    if (!isSelectMode) {
+      router.push(`/past-splits/${expenseId}`); // Navigate to individual expense page
+    }
+  };
+
+  // Handle selection/deselection of an expense
+  const handleSelectExpense = (expenseId: string) => {
+    setSelectedExpenses((prevSelected) =>
+      prevSelected.includes(expenseId)
+        ? prevSelected.filter((id) => id !== expenseId)
+        : [...prevSelected, expenseId]
+    );
+  };
+
+  // Handle deleting selected expenses
+  const handleDeleteSelected = async () => {
+    const confirmed = confirm("Are you sure you want to delete the selected splits?");
+    if (confirmed) {
+      try {
+        // Delete each selected expense from Firestore
+        await Promise.all(
+          selectedExpenses.map((expenseId) => deleteExpenseFromFirestore(expenseId))
+        );
+        // Remove the deleted expenses from the UI
+        setExpenses((prevExpenses) =>
+          prevExpenses.filter((expense) => !selectedExpenses.includes(expense.id!))
+        );
+        // Clear selected expenses and exit select mode
+        setSelectedExpenses([]);
+        setIsSelectMode(false);
+      } catch (error) {
+        console.error("Error deleting expenses:", error);
+      }
+    }
+  };
+
+  // Toggle selection mode
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    setSelectedExpenses([]); // Clear any selections when toggling mode
   };
 
   return (
@@ -49,8 +105,45 @@ export default function PastSplits() {
         Past Splits
       </div>
 
+      {/* Action buttons (Select / Cancel and Trash) */}
+      <div className="flex justify-start w-full max-w-screen-lg mx-auto mb-6">
+        {/* Select/Cancel Button */}
+        <button
+          onClick={toggleSelectMode}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mr-4"
+        >
+          {isSelectMode ? "Cancel" : "Select"}
+        </button>
+
+        {/* Trash Button (only visible in select mode) */}
+        {isSelectMode && selectedExpenses.length > 0 && (
+          <button
+            onClick={handleDeleteSelected}
+            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
+          >
+            <FaTrashAlt className="mr-2" /> Delete
+          </button>
+        )}
+
+        {/* Dropdown for Sorting */}
+        <div className="ml-auto">
+          <label htmlFor="sortOrder" className="text-white mr-2">
+            Sort By:
+          </label>
+          <select
+            id="sortOrder"
+            value={sortOrder}
+            onChange={(e) => sortExpenses(e.target.value as 'Newest' | 'Oldest')}
+            className="bg-gray-700 text-white px-2 py-2 rounded-lg"
+          >
+            <option value="Newest">Newest</option>
+            <option value="Oldest">Oldest</option>
+          </select>
+        </div>
+      </div>
+
       {/* Expenses Display */}
-      <div className="max-w-screen-lg mx-auto mt-6 w-full">
+      <div className="max-w-screen-lg mx-auto w-full">
         {expenses.length === 0 ? (
           <p className="text-white text-center">No past splits found.</p>
         ) : (
@@ -62,25 +155,53 @@ export default function PastSplits() {
               {expenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="bg-gray-800 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:bg-gray-700 border border-green-400" // Added green border
+                  className={`relative bg-gray-800 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:bg-gray-700 border border-green-400 group ${
+                    isSelectMode ? "cursor-default" : ""
+                  }`} // Disable click events in select mode
                   onClick={() => handleExpenseClick(expense.id!)}
                 >
-                  <p className="text-lg font-semibold mb-2 text-center"> {/* Center-aligned date */}
+                  {/* Checkbox for selection (visible in select mode) */}
+                  {isSelectMode && (
+                    <input
+                      type="checkbox"
+                      className="absolute top-3 left-3 w-5 h-5"
+                      checked={selectedExpenses.includes(expense.id!)}
+                      onChange={() => handleSelectExpense(expense.id!)}
+                    />
+                  )}
+
+                  <p className="text-lg font-semibold mb-2 text-center">
                     {expense.createdAt instanceof Date
                       ? expense.createdAt.toLocaleDateString()
                       : "Unknown Date"} {/* Display formatted date */}
                   </p>
                   {expense.receiptUrl ? (
-                   <Image
-                   src={expense.receiptUrl}
-                   alt="Receipt"
-                   width={200}
-                   height={200}
-                   className="rounded-lg object-cover w-[200px] h-[200px]"
-                   style={{ objectFit: "cover" }} // Ensure cropping
-                 />
+                    <Image
+                      src={expense.receiptUrl}
+                      alt="Receipt"
+                      width={200}
+                      height={200}
+                      className="rounded-lg object-cover w-[200px] h-[200px]"
+                      style={{ objectFit: "cover" }} // Ensure cropping
+                    />
                   ) : (
                     <p className="text-gray-400">No receipt available</p>
+                  )}
+
+                  {/* Hover effect for participants (if not in select mode) */}
+                  {!isSelectMode && (
+                    <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
+                      <p className="font-bold text-center mb-2">
+                        Participants: {expense.splitDetails.length}
+                      </p>
+                      <ul className="mb-4">
+                        {expense.splitDetails.map((participant) => (
+                          <li key={participant.name} className="text-center">
+                            {participant.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
               ))}

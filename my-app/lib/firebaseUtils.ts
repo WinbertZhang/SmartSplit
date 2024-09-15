@@ -7,6 +7,7 @@ import {
   query,
   where,
   updateDoc,
+  deleteDoc,
   FieldValue,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -49,6 +50,17 @@ export async function saveSplitToFirestore(
     throw new Error("Error updating split details and items");
   }
 }
+
+export const deleteExpenseFromFirestore = async (expenseId: string) => {
+  try {
+    const expenseRef = doc(db, "expenses", expenseId);
+    await deleteDoc(expenseRef);
+    console.log("Expense deleted successfully!");
+  } catch (error) {
+    console.error("Error deleting expense:", error);
+    throw new Error("Error deleting expense");
+  }
+};
 
 // Function to upload an image to Firebase Storage and return the URL
 export async function uploadImageToFirebaseStorage(imageFile: File, userId: string): Promise<string | null> {

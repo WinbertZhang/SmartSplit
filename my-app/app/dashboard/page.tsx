@@ -28,7 +28,7 @@ export default function Dashboard() {
         expenses.
       </p>
       <div className="max-w-screen-lg mx-auto px-6 relative z-10 flex-grow">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link
             href="/receipt"
             className="bg-[#212C40] text-white p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center"
@@ -52,7 +52,7 @@ export default function Dashboard() {
             </p>
           </Link>
 
-          {/* View Receipt Graphs Module */}
+          {/* View Receipt Graphs Module
           <Link
             href="/receipt-graphs"
             className="bg-[#212C40] text-white p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center"
@@ -62,7 +62,7 @@ export default function Dashboard() {
             <p className="text-gray-400 mt-2">
               Analyze the receipt breakdown with graphs.
             </p>
-          </Link>
+          </Link> */}
         </div>
       </div>
     </div>
