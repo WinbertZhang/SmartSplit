@@ -8,7 +8,6 @@ import {
   showErrorToast,
 } from "@/components/toastNotifications";
 import ReceiptTable from "@/components/receiptTable";
-import { processReceiptImage } from "@/components/receiptProcessor";
 import {
   uploadImageToFirebaseStorage,
   saveReceiptItemsToFirestore,
@@ -110,6 +109,28 @@ export default function ReceiptPage() {
 
     setLoading(false);
   };
+
+  const processReceiptImage = async (uploadedImage: File) => {
+    const formData = new FormData();
+    formData.append("image", uploadedImage);
+    formData.append(
+      "prompt",
+      'Please return a JSON block with all the items and their prices in this format: { "ItemName": "$Price" }'
+    );
+  
+    const res = await fetch("/api/gemini-parse", {
+      method: "POST",
+      body: formData,
+    });
+  
+    if (!res.ok) {
+      throw new Error("Failed to process receipt");
+    }
+  
+    const jsonResponse = await res.json();
+    return jsonResponse.cleanedJson;
+  }
+  
 
   const recalculateTotals = (items: ReceiptItem[], tax: number) => {
     const subtotal = items.reduce((acc, item) => acc + item.price, 0);

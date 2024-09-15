@@ -67,10 +67,9 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const imageFile = formData.get('image') as File;
-    const initialPrompt = formData.get('prompt') as string;
 
-    if (!imageFile || !initialPrompt) {
-      return NextResponse.json({ error: 'Image and prompt are required' }, { status: 400 });
+    if (!imageFile) {
+      return NextResponse.json({ error: 'Image required' }, { status: 400 });
     }
 
     // Convert the uploaded image to a base64 string
