@@ -3,26 +3,11 @@
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebaseConfig";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { fetchUserGroups, Group } from "@/lib/firebaseUtils";
 import Link from "next/link";
 import { FaReceipt, FaMoneyBillWave, FaChartPie } from "react-icons/fa";
 
 export default function Dashboard() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [, setGroups] = useState<Group[]>([]);
-
-  // Fetch groups for the logged-in user
-  useEffect(() => {
-    const fetchGroups = async () => {
-      if (user) {
-        const userGroups = await fetchUserGroups(user.uid);
-        setGroups(userGroups);
-      }
-    };
-
-    fetchGroups();
-  }, [user]);
-
   // Authentication state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {

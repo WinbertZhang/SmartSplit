@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebaseConfig";
@@ -62,22 +62,23 @@ export default function PastSplits() {
               {expenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="bg-gray-800 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:bg-gray-700"
+                  className="bg-gray-800 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:bg-gray-700 border border-green-400" // Added green border
                   onClick={() => handleExpenseClick(expense.id!)}
                 >
-                  <p className="text-lg font-semibold mb-2">
+                  <p className="text-lg font-semibold mb-2 text-center"> {/* Center-aligned date */}
                     {expense.createdAt instanceof Date
                       ? expense.createdAt.toLocaleDateString()
                       : "Unknown Date"} {/* Display formatted date */}
                   </p>
                   {expense.receiptUrl ? (
-                    <Image
-                      src={expense.receiptUrl}
-                      alt="Receipt"
-                      width={200}
-                      height={200}
-                      className="rounded-lg"
-                    />
+                   <Image
+                   src={expense.receiptUrl}
+                   alt="Receipt"
+                   width={200}
+                   height={200}
+                   className="rounded-lg object-cover w-[200px] h-[200px]"
+                   style={{ objectFit: "cover" }} // Ensure cropping
+                 />
                   ) : (
                     <p className="text-gray-400">No receipt available</p>
                   )}
