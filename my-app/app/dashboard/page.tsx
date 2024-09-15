@@ -30,7 +30,7 @@ export default function Dashboard() {
       <div className="max-w-screen-lg mx-auto px-6 relative z-10 flex-grow">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link
-            href="/receipt"
+            href="/upload-receipt"
             className="bg-[#212C40] text-white p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center"
           >
             <FaReceipt className="text-gray-400 hover:text-white text-6xl mb-4 transition-colors duration-200" />
