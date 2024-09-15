@@ -71,12 +71,17 @@ export default function ReceiptTable({
           <tr className="bg-[#1A2535]">
             <th className="py-3 px-4 text-left font-medium text-white"></th>
             <th className="py-3 px-4 text-left font-medium text-white">Item</th>
-            <th className="py-3 px-4 text-right font-medium text-white">Price</th>
+            <th className="py-3 px-4 text-right font-medium text-white">
+              Price
+            </th>
           </tr>
         </thead>
         <tbody>
           {receiptItems.map((item) => (
-            <tr key={item.id} className="border-t border-gray-600 hover:bg-[#4A4F5C]">
+            <tr
+              key={item.id}
+              className="border-t border-gray-600 hover:bg-[#4A4F5C]"
+            >
               <td className="py-3 px-4">
                 <button onClick={() => onRemoveItem(item.id)}>
                   <FaTimes className="text-red-500" />
@@ -86,14 +91,16 @@ export default function ReceiptTable({
                 <input
                   type="text"
                   value={item.item}
-                  onChange={(e) => onEditItem(item.id, { item: e.target.value })}
+                  onChange={(e) =>
+                    onEditItem(item.id, { item: e.target.value })
+                  }
                   className="bg-transparent text-white border-gray-400 focus:outline-none w-full"
                 />
               </td>
               <td className="py-3 px-4 text-right">
                 <input
                   type="text"
-                  value={item.price.toFixed(2)}
+                  value={"$" + item.price.toFixed(2)}
                   onChange={(e) => handlePriceChange(item.id, e.target.value)}
                   className="bg-transparent text-white w-full text-right focus:outline-none"
                 />
@@ -127,23 +134,24 @@ export default function ReceiptTable({
 
       {/* Display Subtotal, Tax, and Total */}
       <div className="px-4 py-2 text-white text-lg text-right">
-        <p className="mb-2">
-          Subtotal: ${subtotal.toFixed(2)}
-        </p>
+        <p className="mb-2">Subtotal: ${subtotal.toFixed(2)}</p>
         <p className="mb-2">
           Tax: $
-          <input
-            type="text"
-            value={tax.toFixed(2)}
-            onChange={(e) =>
-              onEditItem(0, { tax: parseFloat(handlePriceInput(e.target.value)) || 0 })
-            }
-            className="bg-transparent text-white border-b border-gray-400 focus:outline-none text-right"
-          />
+          <span className="inline-block">
+            <input
+              type="text"
+              value={tax.toFixed(2)}
+              onChange={(e) =>
+                onEditItem(0, {
+                  tax: parseFloat(handlePriceInput(e.target.value)) || 0,
+                })
+              }
+              className="bg-transparent text-white border-gray-400 focus:outline-none text-right ml-1 w-16"
+            />
+          </span>
         </p>
-        <p className="font-bold">
-          Total: ${total.toFixed(2)}
-        </p>
+
+        <p className="font-bold">Total: ${total.toFixed(2)}</p>
       </div>
     </div>
   );

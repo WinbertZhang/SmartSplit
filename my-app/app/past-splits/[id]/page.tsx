@@ -47,12 +47,14 @@ export default function PastSplitsView() {
         // Create the split data structure
         const splitInfo: Record<string, Set<number>> = {};
         data.items.forEach((item) => {
-          item.splitters.forEach((splitter) => {
-            if (!splitInfo[splitter]) {
-              splitInfo[splitter] = new Set();
-            }
-            splitInfo[splitter].add(item.id);
-          });
+          if (item.splitters) {
+            item.splitters.forEach((splitter) => {
+              if (!splitInfo[splitter]) {
+                splitInfo[splitter] = new Set();
+              }
+              splitInfo[splitter].add(item.id);
+            });
+          }
         });
         setSplitData(splitInfo);
       } else {
