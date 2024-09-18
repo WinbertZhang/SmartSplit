@@ -1,49 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebaseConfig";
-import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { fetchUserExpenses, deleteExpenseFromFirestore } from "@/lib/firebaseUtils"; // Import the delete function
-import { useRouter } from "next/navigation"; // Use the `useRouter` from Next.js 14 app router
-import Image from "next/image";
-import { ReceiptData } from "@/data/receiptTypes"; // Import ReceiptData type
-import { FaTrashAlt } from "react-icons/fa"; // Import trash can icon
+import { auth } from "@/lib/firebaseConfig"; // Firebase authentication configuration
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; // Firebase authentication state listener
+import { fetchUserExpenses, deleteExpenseFromFirestore } from "@/lib/firebaseUtils"; // Fetch and delete utilities for Firestore
+import { useRouter } from "next/navigation"; // Next.js router for navigation
+import Image from "next/image"; // Optimized image handling in Next.js
+import { ReceiptData } from "@/data/receiptTypes"; // Types for Receipt Data
+import { FaTrashAlt } from "react-icons/fa"; // Trash can icon for delete button
 
 export default function PastSplits() {
+  // State to hold user, expenses, selected expenses, and UI states like select mode and sort order
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [expenses, setExpenses] = useState<ReceiptData[]>([]);
-  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]); // Track selected expenses
-  const [isSelectMode, setIsSelectMode] = useState(false); // Toggle for select mode
-  const [sortOrder, setSortOrder] = useState<'Newest' | 'Oldest'>('Newest'); // Track the sort order
-  const router = useRouter(); // For routing to individual expense pages
+  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]); // Tracks selected expenses for deletion
+  const [isSelectMode, setIsSelectMode] = useState(false); // Toggles selection mode
+  const [sortOrder, setSortOrder] = useState<'Newest' | 'Oldest'>('Newest'); // Controls the sorting of expenses
+  const router = useRouter(); // Router for navigation between pages
 
-  // Fetch expenses for the logged-in user
+  // Fetch expenses for the logged-in user from Firestore
   useEffect(() => {
     const fetchExpenses = async () => {
       if (user) {
         const userExpenses = await fetchUserExpenses(user.uid);
-        setExpenses(userExpenses);
+        setExpenses(userExpenses); // Store fetched expenses in state
       }
     };
 
-    fetchExpenses(); // Trigger fetch when user is set
+    fetchExpenses(); // Trigger expense fetching when user is set
   }, [user]);
 
-  // Authentication state listener
+  // Listen to Firebase authentication state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUser(user);
+        setUser(user); // Set the user when authenticated
       } else {
-        // Redirect to login if not authenticated
-        router.push("/login");
+        router.push("/login"); // Redirect to login page if not authenticated
       }
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // Clean up the listener when component unmounts
   }, [router]);
 
-  // Handle sorting expenses by createdAt (either Oldest or Newest)
+  // Function to sort expenses based on createdAt (either Newest or Oldest)
   const sortExpenses = (order: 'Newest' | 'Oldest') => {
     const sortedExpenses = [...expenses].sort((a, b) => {
       if (order === 'Newest') {
@@ -52,26 +52,27 @@ export default function PastSplits() {
         return a.createdAt.getTime() - b.createdAt.getTime(); // Oldest first
       }
     });
-    setExpenses(sortedExpenses);
+    setExpenses(sortedExpenses); // Update state with sorted expenses
     setSortOrder(order); // Update sort order
   };
 
+  // Handle click on individual expense, navigating to the detailed view if not in select mode
   const handleExpenseClick = (expenseId: string) => {
     if (!isSelectMode) {
       router.push(`/past-splits/${expenseId}`); // Navigate to individual expense page
     }
   };
 
-  // Handle selection/deselection of an expense
+  // Handle selecting/deselecting an expense for deletion
   const handleSelectExpense = (expenseId: string) => {
     setSelectedExpenses((prevSelected) =>
       prevSelected.includes(expenseId)
-        ? prevSelected.filter((id) => id !== expenseId)
-        : [...prevSelected, expenseId]
+        ? prevSelected.filter((id) => id !== expenseId) // Deselect if already selected
+        : [...prevSelected, expenseId] // Add to selected list if not selected
     );
   };
 
-  // Handle deleting selected expenses
+  // Handle deletion of selected expenses from Firestore
   const handleDeleteSelected = async () => {
     const confirmed = confirm("Are you sure you want to delete the selected splits?");
     if (confirmed) {
@@ -84,19 +85,18 @@ export default function PastSplits() {
         setExpenses((prevExpenses) =>
           prevExpenses.filter((expense) => !selectedExpenses.includes(expense.id!))
         );
-        // Clear selected expenses and exit select mode
-        setSelectedExpenses([]);
-        setIsSelectMode(false);
+        setSelectedExpenses([]); // Clear selected expenses
+        setIsSelectMode(false); // Exit select mode
       } catch (error) {
-        console.error("Error deleting expenses:", error);
+        console.error("Error deleting expenses:", error); // Handle errors during deletion
       }
     }
   };
 
-  // Toggle selection mode
+  // Toggle selection mode on/off
   const toggleSelectMode = () => {
-    setIsSelectMode(!isSelectMode);
-    setSelectedExpenses([]); // Clear any selections when toggling mode
+    setIsSelectMode(!isSelectMode); // Toggle the select mode state
+    setSelectedExpenses([]); // Clear selected expenses when toggling mode
   };
 
   return (
@@ -105,7 +105,7 @@ export default function PastSplits() {
         Past Splits
       </div>
 
-      {/* Action buttons (Select / Cancel and Trash) */}
+      {/* Action buttons for selecting and deleting expenses */}
       <div className="flex justify-start w-full max-w-screen-lg mx-auto mb-6">
         {/* Select/Cancel Button */}
         <button
@@ -115,7 +115,7 @@ export default function PastSplits() {
           {isSelectMode ? "Cancel" : "Select"}
         </button>
 
-        {/* Trash Button (only visible in select mode) */}
+        {/* Trash Button: Only visible when in select mode and at least one expense is selected */}
         {isSelectMode && selectedExpenses.length > 0 && (
           <button
             onClick={handleDeleteSelected}
@@ -125,7 +125,7 @@ export default function PastSplits() {
           </button>
         )}
 
-        {/* Dropdown for Sorting */}
+        {/* Dropdown to select sort order (Newest/Oldest) */}
         <div className="ml-auto">
           <label htmlFor="sortOrder" className="text-white mr-2">
             Sort By:
@@ -142,14 +142,14 @@ export default function PastSplits() {
         </div>
       </div>
 
-      {/* Expenses Display */}
+      {/* Expenses Display Section */}
       <div className="max-w-screen-lg mx-auto w-full">
         {expenses.length === 0 ? (
-          <p className="text-white text-center">No past splits found.</p>
+          <p className="text-white text-center">No past splits found.</p> // Show message if no expenses exist
         ) : (
           <div
             className="bg-[#1F2A3D] p-6 rounded-lg shadow-lg"
-            style={{ transition: "height 0.3s ease-in-out" }}
+            style={{ transition: "height 0.3s ease-in-out" }} // Smooth height transition
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
               {expenses.map((expense) => (
@@ -160,7 +160,7 @@ export default function PastSplits() {
                   }`} // Disable click events in select mode
                   onClick={() => handleExpenseClick(expense.id!)}
                 >
-                  {/* Checkbox for selection (visible in select mode) */}
+                  {/* Checkbox for selection (only in select mode) */}
                   {isSelectMode && (
                     <input
                       type="checkbox"
@@ -170,11 +170,14 @@ export default function PastSplits() {
                     />
                   )}
 
+                  {/* Display the date of the expense */}
                   <p className="text-lg font-semibold mb-2 text-center">
                     {expense.createdAt instanceof Date
-                      ? expense.createdAt.toLocaleDateString()
-                      : "Unknown Date"} {/* Display formatted date */}
+                      ? expense.createdAt.toLocaleDateString() // Format date if valid
+                      : "Unknown Date"} 
                   </p>
+
+                  {/* Display the receipt image if available */}
                   {expense.receiptUrl ? (
                     <Image
                       src={expense.receiptUrl}
@@ -182,13 +185,13 @@ export default function PastSplits() {
                       width={200}
                       height={200}
                       className="rounded-lg object-cover w-[200px] h-[200px]"
-                      style={{ objectFit: "cover" }} // Ensure cropping
+                      style={{ objectFit: "cover" }} // Ensure correct image cropping
                     />
                   ) : (
-                    <p className="text-gray-400">No receipt available</p>
+                    <p className="text-gray-400">No receipt available</p> // Fallback if no image
                   )}
 
-                  {/* Hover effect for participants (if not in select mode) */}
+                  {/* Hover effect to show participants if not in select mode */}
                   {!isSelectMode && (
                     <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
                       <p className="font-bold text-center mb-2">

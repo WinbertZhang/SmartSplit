@@ -1,74 +1,81 @@
 "use client";
+
 import { useEffect, useState, Suspense, useCallback } from "react";
-import { useParams } from "next/navigation"; // To get the `id` from the URL and handle navigation
-import { doc, getDoc } from "firebase/firestore"; // For Firestore interaction
-import { getAuth, onAuthStateChanged } from "firebase/auth"; // Firebase Auth
-import { db } from "@/lib/firebaseConfig"; // Your Firebase configuration
-import SplitTable from "@/components/splitTable";
-import FinalizeSummary from "@/components/finalizeSummary";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Image from "next/image";
-import { ReceiptData, ReceiptItem } from "@/data/receiptTypes";
-import { useReceipt, ReceiptProvider } from "@/context/receiptContext";
-import { saveSplitToFirestore } from "@/lib/firebaseUtils";
+import { useParams } from "next/navigation"; // Retrieve `id` from the URL and handle navigation
+import { doc, getDoc } from "firebase/firestore"; // Firebase Firestore interaction
+import { getAuth, onAuthStateChanged } from "firebase/auth"; // Firebase Auth for user authentication
+import { db } from "@/lib/firebaseConfig"; // Firebase configuration
+import SplitTable from "@/components/splitTable"; // SplitTable component for handling item splits
+import FinalizeSummary from "@/components/finalizeSummary"; // FinalizeSummary component to show final amounts
+import { toast, ToastContainer } from "react-toastify"; // Toast for user notifications
+import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
+import Image from "next/image"; // Optimized image handling in Next.js
+import { ReceiptData, ReceiptItem } from "@/data/receiptTypes"; // Types for receipt data and items
+import { useReceipt, ReceiptProvider } from "@/context/receiptContext"; // Context for receipt data
+import { saveSplitToFirestore } from "@/lib/firebaseUtils"; // Function to save split data to Firestore
 
 function SplitPageContent() {
   const { id } = useParams(); // Get the receipt ID from the URL
   const { imageUrl } = useReceipt(); // Get the image URL from the context
   const receiptId = Array.isArray(id) ? id[0] : id; // Ensure `id` is a string
   const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
-  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
-  const [subtotal, setSubtotal] = useState<number>(0);
-  const [tax, setTax] = useState<number>(0);
-  const [total, setTotal] = useState<number>(0);
-  const [groupMembers, setGroupMembers] = useState<string[]>([]);
-  const [splitData, setSplitData] = useState<Record<string, Set<number>>>({});
-  const [showSummary, setShowSummary] = useState<boolean>(false);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null); // State for the receipt URL
+  const [subtotal, setSubtotal] = useState<number>(0); // Subtotal for the receipt
+  const [tax, setTax] = useState<number>(0); // Tax for the receipt
+  const [total, setTotal] = useState<number>(0); // Total amount for the receipt
+  const [groupMembers, setGroupMembers] = useState<string[]>([]); // State to manage group members
+  const [splitData, setSplitData] = useState<Record<string, Set<number>>>({}); // State for tracking which items each member is splitting
+  const [showSummary, setShowSummary] = useState<boolean>(false); // Control for showing the final summary
   const [finalizeDisabled, setFinalizeDisabled] = useState<boolean>(false); // Control for disabling Finalize button
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null); // Handle errors
-  const [memberOwedAmounts, setMemberOwedAmounts] = useState<Record<string, number>>({});
-  const auth = getAuth();
+  const [loading, setLoading] = useState(true); // Loading state for fetching data
+  const [error, setError] = useState<string | null>(null); // Error state
+  const [memberOwedAmounts, setMemberOwedAmounts] = useState<
+    Record<string, number>
+  >({}); // Amount each member owes
+  const auth = getAuth(); // Get Firebase Auth instance
 
-  const fetchReceiptData = useCallback(async (userId: string, userName: string) => {
-    try {
-      const receiptRef = doc(db, "expenses", receiptId); // Fetch the receipt based on the ID from params
-      const receiptSnap = await getDoc(receiptRef);
+  // Function to fetch receipt data from Firestore
+  const fetchReceiptData = useCallback(
+    async (userId: string, userName: string) => {
+      try {
+        const receiptRef = doc(db, "expenses", receiptId); // Reference to the receipt document in Firestore
+        const receiptSnap = await getDoc(receiptRef); // Fetch the document snapshot
 
-      if (receiptSnap.exists()) {
-        const data = receiptSnap.data() as ReceiptData;
+        if (receiptSnap.exists()) {
+          const data = receiptSnap.data() as ReceiptData;
 
-        // Check if the logged-in user is the owner of the receipt
-        if (data.userId !== userId) {
-          toast.error("You are not authorized to view this receipt.");
-          setError("You are not authorized to view this receipt.");
+          // Check if the logged-in user is the owner of the receipt
+          if (data.userId !== userId) {
+            toast.error("You are not authorized to view this receipt.");
+            setError("You are not authorized to view this receipt.");
+          } else {
+            setReceiptItems(data.items); // Set the receipt items in state
+            setReceiptUrl(data.receiptUrl || null); // Fallback to Firebase URL if available
+            setSubtotal(data.subtotal || 0);
+            setTax(data.tax || 0);
+            setTotal(data.total || 0);
+
+            setGroupMembers([userName]); // Set the logged-in user as the group member
+            const allItemsSet = new Set(data.items.map((item) => item.id)); // Get all item IDs
+            setSplitData({ [userName]: allItemsSet }); // Initialize split data with all items for the logged-in user
+            setFinalizeDisabled(false); // Enable Finalize button
+          }
         } else {
-          setReceiptItems(data.items);
-          setReceiptUrl(data.receiptUrl || null); // Fallback to Firebase URL
-          setSubtotal(data.subtotal || 0);
-          setTax(data.tax || 0);
-          setTotal(data.total || 0);
-
-          setGroupMembers([userName]);
-          const allItemsSet = new Set(data.items.map((item) => item.id));
-          setSplitData({ [userName]: allItemsSet });
-          setFinalizeDisabled(false);
+          toast.error("No such document exists.");
+          setError("No such document exists.");
         }
-      } else {
-        toast.error("No such document exists.");
-        setError("No such document exists.");
+      } catch (error) {
+        toast.error("Error fetching receipt data.");
+        setError("Error fetching receipt data.");
+      } finally {
+        setLoading(false); // Stop loading once data is fetched
       }
-    } catch (error) {
-      toast.error("Error fetching receipt data.");
-      setError("Error fetching receipt data.");
-    } finally {
-      setLoading(false);
-    }
-  }, [receiptId]);
+    },
+    [receiptId]
+  );
 
+  // Handle authentication state and fetch receipt data on component mount
   useEffect(() => {
-    // Check if the user is logged in and load data
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         const userName = user.displayName?.split(" ")[0] || user.uid;
@@ -92,9 +99,9 @@ function SplitPageContent() {
     return () => unsubscribe(); // Cleanup the auth listener on unmount
   }, [auth, imageUrl, fetchReceiptData]);
 
-  // Mark changes and enable Finalize button
+  // Handle any changes and enable the Finalize button
   const handleAnyChange = () => {
-    setFinalizeDisabled(false); // Enable the button when any change happens
+    setFinalizeDisabled(false); // Enable the Finalize button when any change happens
     setShowSummary(false); // Hide the summary until finalized again
   };
 
@@ -130,17 +137,16 @@ function SplitPageContent() {
       toast.error("Member already exists!"); // Show error if duplicate name
       return;
     }
-    setGroupMembers([...groupMembers, newMember]);
+    setGroupMembers([...groupMembers, newMember]); // Add the new member to the group
     handleAnyChange(); // Mark change and enable Finalize
   };
 
-
   // Remove a group member
   const handleRemoveMember = (memberName: string) => {
-    setGroupMembers(groupMembers.filter((member) => member !== memberName));
+    setGroupMembers(groupMembers.filter((member) => member !== memberName)); // Remove the member from the group
     setSplitData((prevData) => {
       const updatedData = { ...prevData };
-      delete updatedData[memberName];
+      delete updatedData[memberName]; // Remove the member from the split data
       handleAnyChange(); // Mark change and enable Finalize
       return updatedData;
     });
@@ -158,32 +164,37 @@ function SplitPageContent() {
     );
     setSplitData((prevData) => {
       const updatedData = { ...prevData };
-      updatedData[newName] = updatedData[oldName];
-      delete updatedData[oldName];
+      updatedData[newName] = updatedData[oldName]; // Assign the old data to the new name
+      delete updatedData[oldName]; // Remove the old name
       handleAnyChange(); // Mark change and enable Finalize
       return updatedData;
     });
   };
+
+  // Finalize the split and save the data to Firestore
   const handleFinalize = async () => {
     const memberOwedAmounts: Record<string, number> = {};
-  
+
     // Prepare updated items with splitters
     const updatedItems = receiptItems.map((item) => ({
       ...item,
-      splitters: groupMembers.filter((member) => splitData[member]?.has(item.id)), // Add splitters
+      splitters: groupMembers.filter((member) =>
+        splitData[member]?.has(item.id)
+      ), // Add splitters
     }));
-  
+
     // Calculate the amount each member owes based on item splits
     receiptItems.forEach((item) => {
-      const membersSharingItem = groupMembers.filter(
-        (member) => splitData[member]?.has(item.id)
+      const membersSharingItem = groupMembers.filter((member) =>
+        splitData[member]?.has(item.id)
       );
       const splitCost = item.price / membersSharingItem.length;
       membersSharingItem.forEach((member) => {
-        memberOwedAmounts[member] = (memberOwedAmounts[member] || 0) + splitCost;
+        memberOwedAmounts[member] =
+          (memberOwedAmounts[member] || 0) + splitCost;
       });
     });
-  
+
     // Calculate each member's share of the tax proportionally based on the subtotal they owe
     const memberOwedWithTax: Record<string, number> = {};
     Object.keys(memberOwedAmounts).forEach((member) => {
@@ -191,13 +202,13 @@ function SplitPageContent() {
       const memberTaxShare = (memberSubtotalShare / subtotal) * tax;
       memberOwedWithTax[member] = memberSubtotalShare + memberTaxShare;
     });
-  
+
     // Create the split details array to be saved to Firestore
     const splitDetails = groupMembers.map((member) => ({
       name: member,
       amount: memberOwedWithTax[member],
     }));
-  
+
     // Save the split details and items with splitters to Firestore
     try {
       await saveSplitToFirestore(receiptId, splitDetails, updatedItems); // Save splitters and amounts
@@ -205,29 +216,26 @@ function SplitPageContent() {
     } catch (error) {
       toast.error("Error saving split details to Firestore."); // Show error toast
     }
-  
+
     // Set the calculated amounts and show the summary
     setMemberOwedAmounts(memberOwedWithTax); // Update the state with the owed amounts
     setShowSummary(true); // Show summary
     setFinalizeDisabled(true); // Disable the finalize button
-  };  
-
-  const handleFinalizeDisabledChange = (disabled: boolean) => {
-    setFinalizeDisabled(disabled);
   };
 
   if (loading) {
-    return <p>Loading receipt data...</p>;
+    return <p>Loading receipt data...</p>; // Show loading message while data is being fetched
   }
 
   if (error) {
-    return <p>{error}</p>; // Display error if something goes wrong
+    return <p>{error}</p>; // Show error message if something goes wrong
   }
 
   return (
     <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-20 mb-4">
       <h2 className="text-white text-2xl font-bold mb-6">Receipt Splitter</h2>
 
+      {/* Display the receipt image */}
       {receiptUrl && (
         <div className="my-6 grid justify-center">
           <Image
@@ -239,6 +247,7 @@ function SplitPageContent() {
         </div>
       )}
 
+      {/* If there are receipt items, show the SplitTable */}
       {receiptItems.length > 0 ? (
         <>
           <SplitTable
@@ -248,11 +257,13 @@ function SplitPageContent() {
             splitData={splitData}
             onRemoveMember={handleRemoveMember}
             onRenameMember={handleRenameMember}
-            onFinalizeDisabledChange={handleFinalizeDisabledChange}
+            onFinalizeDisabledChange={setFinalizeDisabled}
             subtotal={subtotal}
             tax={tax}
             total={total}
           />
+
+          {/* Input field and button to add new group members */}
           <div className="my-6 flex justify-center items-center">
             <input
               type="text"
@@ -263,7 +274,7 @@ function SplitPageContent() {
                   const newMember = (e.target as HTMLInputElement).value.trim();
                   if (newMember) {
                     handleAddMember(newMember);
-                    (e.target as HTMLInputElement).value = "";
+                    (e.target as HTMLInputElement).value = ""; // Clear the input field after adding
                   }
                 }
               }}
@@ -271,7 +282,9 @@ function SplitPageContent() {
             />
             <button
               onClick={() => {
-                const input = document.getElementById('new-member-input') as HTMLInputElement;
+                const input = document.getElementById(
+                  "new-member-input"
+                ) as HTMLInputElement;
                 const newMember = input.value.trim();
                 if (newMember) {
                   handleAddMember(newMember);
@@ -284,13 +297,14 @@ function SplitPageContent() {
             </button>
           </div>
 
-          {" "}
+          {/* Finalize button */}
           <button
             onClick={handleFinalize}
-            className={`text-white px-4 py-2 mt-4 rounded-lg ${finalizeDisabled
-              ? "bg-gray-500 cursor-not-allowed"
-              : "bg-green-500 hover:bg-green-600"
-              }`}
+            className={`text-white px-4 py-2 mt-4 rounded-lg ${
+              finalizeDisabled
+                ? "bg-gray-500 cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-600"
+            }`}
             disabled={finalizeDisabled} // Disable based on state
           >
             Finalize
@@ -313,6 +327,7 @@ function SplitPageContent() {
   );
 }
 
+// Component wrapped in ReceiptProvider and Suspense for better context management and loading state
 export default function SplitPage() {
   return (
     <ReceiptProvider>
