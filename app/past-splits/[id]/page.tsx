@@ -1,21 +1,25 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation"; // To retrieve the `id` from the URL
-import { doc, getDoc } from "firebase/firestore"; // Firebase Firestore functions
-import { db } from "@/lib/firebaseConfig"; // Firebase configuration
-import ReadOnlySplitTable from "@/components/readOnlySplitTable"; // Import read-only split table component
-import FinalizeSummary from "@/components/finalizeSummary"; // Import summary component for finalizing splits
-import { toast, ToastContainer } from "react-toastify"; // Toast notifications for user feedback
-import "react-toastify/dist/ReactToastify.css"; // Toastify CSS for notifications
-import Image from "next/image"; // Next.js optimized image component
-import { ReceiptData, ReceiptItem } from "@/data/receiptTypes"; // Import receipt types
+import { useParams } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebaseConfig";
+import ReadOnlySplitTable from "@/components/readOnlySplitTable";
+import FinalizeSummary from "@/components/finalizeSummary";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Image from "next/image";
+import { ReceiptData, ReceiptItem } from "@/data/receiptTypes";
+import { Pie } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+
+// Register Chart.js elements
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function PastSplitsView() {
-  const { id } = useParams(); // Get the `id` of the receipt from the URL
-  const receiptId = Array.isArray(id) ? id[0] : id; // Ensure `id` is a string (handle array case)
+  const { id } = useParams();
+  const receiptId = Array.isArray(id) ? id[0] : id;
 
-  // State for managing receipt and split details
   const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [subtotal, setSubtotal] = useState<number>(0);
@@ -24,33 +28,34 @@ export default function PastSplitsView() {
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [splitData, setSplitData] = useState<Record<string, Set<number>>>({});
   const [memberOwedAmounts, setMemberOwedAmounts] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true); // Loading state for data fetch
-  const [error, setError] = useState<string | null>(null); // Error state for any issues
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Function to fetch receipt data from Firestore using the receipt ID
+  const colors = [
+    "#f3e79b", "#fac484", "#f8a07e", "#eb7f86", "#ce6693",
+    "#a059a0", "#5c53a5", "#4b8bbd", "#3c97b8", "#2d879f", "#1b658e"
+  ];
+
   const fetchReceiptData = useCallback(async () => {
     try {
-      const receiptRef = doc(db, "expenses", receiptId); // Reference to the specific receipt document
-      const receiptSnap = await getDoc(receiptRef); // Fetch the document snapshot
+      const receiptRef = doc(db, "expenses", receiptId);
+      const receiptSnap = await getDoc(receiptRef);
 
       if (receiptSnap.exists()) {
-        // If the document exists, retrieve its data and set it to state
         const data = receiptSnap.data() as ReceiptData;
         setReceiptItems(data.items);
-        setReceiptUrl(data.receiptUrl || null); // Set receipt image URL
+        setReceiptUrl(data.receiptUrl || null);
         setSubtotal(data.subtotal || 0);
         setTax(data.tax || 0);
         setTotal(data.total || 0);
-        setGroupMembers(data.splitDetails.map((detail) => detail.name)); // Set group members' names
+        setGroupMembers(data.splitDetails.map((detail) => detail.name));
 
-        // Set amounts owed by each member
         const amounts: Record<string, number> = {};
         data.splitDetails.forEach((detail) => {
           amounts[detail.name] = detail.amount;
         });
         setMemberOwedAmounts(amounts);
 
-        // Create the split data structure, mapping members to the items they are splitting
         const splitInfo: Record<string, Set<number>> = {};
         data.items.forEach((item) => {
           if (item.splitters) {
@@ -58,36 +63,44 @@ export default function PastSplitsView() {
               if (!splitInfo[splitter]) {
                 splitInfo[splitter] = new Set();
               }
-              splitInfo[splitter].add(item.id); // Add item IDs to the split list for each member
+              splitInfo[splitter].add(item.id);
             });
           }
         });
         setSplitData(splitInfo);
       } else {
-        // Handle case where the document does not exist
         toast.error("No such document exists.");
         setError("No such document exists.");
       }
     } catch (error) {
-      // Handle errors during data fetching
       toast.error("Error fetching receipt data.");
       setError("Error fetching receipt data.");
     } finally {
-      setLoading(false); // Stop loading once data is fetched or error occurs
+      setLoading(false);
     }
   }, [receiptId]);
 
-  // Fetch receipt data when the component mounts
   useEffect(() => {
     fetchReceiptData();
   }, [fetchReceiptData]);
 
-  // Loading state: display a message while data is being fetched
+  const generatePeopleSplitData = () => {
+    const memberNames = groupMembers;
+    const amounts = groupMembers.map(member => memberOwedAmounts[member] || 0);
+
+    return {
+      labels: memberNames,
+      datasets: [{
+        data: amounts,
+        backgroundColor: colors.slice(0, memberNames.length), // Use the palette, sliced to match the number of members
+      }]
+    };
+  };
+
   if (loading) {
     return <p>Loading receipt data...</p>;
   }
 
-  // Error state: display an error message if something went wrong
   if (error) {
     return <p>{error}</p>;
   }
@@ -96,7 +109,6 @@ export default function PastSplitsView() {
     <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-20 mb-4">
       <h2 className="text-white text-2xl font-bold mb-6">Receipt Summary</h2>
 
-      {/* Display receipt image if available */}
       {receiptUrl && (
         <div className="my-6 grid justify-center">
           <Image
@@ -108,10 +120,8 @@ export default function PastSplitsView() {
         </div>
       )}
 
-      {/* Display receipt items and split details if available */}
       {receiptItems.length > 0 ? (
         <>
-          {/* Read-only table for viewing split data */}
           <ReadOnlySplitTable
             receiptItems={receiptItems}
             groupMembers={groupMembers}
@@ -121,7 +131,38 @@ export default function PastSplitsView() {
             total={total}
           />
 
-          {/* Summary component for finalizing the split view */}
+          {/* Chart.js Pie Chart for People */}
+          <div className="my-6 pt-6" style={{ maxWidth: '400px', margin: '0 auto' }}>
+            <Pie
+              data={generatePeopleSplitData()}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'top',
+                    labels: {
+                      color: 'white', // Set legend text color to white
+                    },
+                  },
+                  tooltip: {
+                    callbacks: {
+                      label: function (tooltipItem) {
+                        // Cast tooltipItem.raw to number and round to 2 decimal places
+                        const value = Number(tooltipItem.raw);
+                        return `${tooltipItem.label}: $${value.toFixed(2)}`;
+                      }
+                    },
+                    bodyColor: 'white', // Set tooltip body text color to white
+                  },
+                },
+              }}
+              height={300}
+              width={300}
+            />
+
+          </div>
+
           <FinalizeSummary
             groupMembers={groupMembers}
             memberOwedAmounts={memberOwedAmounts}

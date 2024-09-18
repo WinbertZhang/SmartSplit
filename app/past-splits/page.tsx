@@ -23,12 +23,14 @@ export default function PastSplits() {
     const fetchExpenses = async () => {
       if (user) {
         const userExpenses = await fetchUserExpenses(user.uid);
-        setExpenses(userExpenses); // Store fetched expenses in state
+        const sortedExpenses = userExpenses.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by Newest
+        setExpenses(sortedExpenses); // Store fetched and sorted expenses in state
       }
     };
-
+  
     fetchExpenses(); // Trigger expense fetching when user is set
   }, [user]);
+  
 
   // Listen to Firebase authentication state changes
   useEffect(() => {
