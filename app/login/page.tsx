@@ -22,15 +22,18 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-700 to-gray-900 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-700 to-gray-900 px-4 sm:px-6 lg:px-8">
+      {/* Login Box */}
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
-        {/* Login page title */}
-        <h1 className="text-3xl font-bold text-center mb-6">Login to Smart Split</h1>
+        {/* Title */}
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6">
+          Login to Smart Split
+        </h1>
 
         {/* Google sign-in button */}
         <button
           onClick={handleSignIn}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-500 transition-all"
+          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
         >
           Sign in with Google
         </button>

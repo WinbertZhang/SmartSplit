@@ -1,4 +1,6 @@
 import React from "react";
+import { toast, ToastContainer } from "react-toastify"; // Import Toastify for notifications
+import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS for styling
 
 interface FinalizeSummaryProps {
   groupMembers: string[];
@@ -9,6 +11,7 @@ export default function FinalizeSummary({
   groupMembers,
   memberOwedAmounts,
 }: FinalizeSummaryProps) {
+  // Function to handle copying the summary to the clipboard
   const handleCopy = () => {
     const summaryText = groupMembers
       .map(
@@ -17,8 +20,18 @@ export default function FinalizeSummary({
       )
       .join("\n");
 
-    navigator.clipboard.writeText(summaryText);
-    alert("Summary copied to clipboard!");
+    navigator.clipboard.writeText(summaryText).then(() => {
+      // Show a toast notification when the text is copied successfully
+      toast.success("Summary copied to clipboard!", {
+        position: "top-right",
+        autoClose: 3000, // Auto-close after 3 seconds
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: false,
+        theme: "dark", // Set a dark theme to match your app's style
+      });
+    });
   };
 
   return (
@@ -32,12 +45,16 @@ export default function FinalizeSummary({
         ))}
       </div>
 
+      {/* Button to copy the summary */}
       <button
-        className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg"
+        className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
         onClick={handleCopy}
       >
         Copy Summary
       </button>
+
+      {/* ToastContainer to show toast notifications */}
+      <ToastContainer />
     </div>
   );
 }

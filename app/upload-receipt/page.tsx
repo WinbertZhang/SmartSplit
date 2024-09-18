@@ -209,22 +209,22 @@ export default function ReceiptPage() {
   return (
     <div className="items-center z-10 mt-20 pt-20">
       <div className="text-center">
-        <h2 className="text-4xl font-bold text-white mb-2">Upload Receipt</h2>
+        <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2">Upload Receipt</h2>
         <p className="text-gray-400 mb-6">
           Upload your receipt to split expenses easily.
         </p>
       </div>
-      <div className="max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
+      <div className="max-w-2xl sm:max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
         {!loading && !receiptData && (
           <div className="my-6">
             {/* Receipt upload button */}
             <div className="flex justify-center">
               <button
-                className="bg-[#212C40] text-white p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
+                className="bg-[#212C40] text-white p-6 sm:p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
                 onClick={() => document.getElementById("file-input")?.click()} // Trigger the file input dialog
               >
-                <FaReceipt className="text-gray-400 hover:text-white text-6xl mb-4 transition-colors duration-200" />
-                <span className="text-lg font-semibold">Upload Receipt</span>
+                <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
+                <span className="text-md sm:text-lg font-semibold">Upload Receipt</span>
               </button>
               <input
                 id="file-input"
@@ -286,7 +286,7 @@ export default function ReceiptPage() {
           <div className="p-6">
             <button
               onClick={handleConfirm}
-              className="w-full bg-[#FF6347] text-white px-6 py-3 mt-4 text-lg font-semibold rounded-lg hover:bg-[#FF7F50] transition-all shadow-lg"
+              className="w-full bg-[#FF6347] text-white px-6 py-3 mt-4 text-md sm:text-lg font-semibold rounded-lg hover:bg-[#FF7F50] transition-all shadow-lg"
             >
               Confirm and Split
             </button>

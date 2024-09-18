@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FiLogOut } from "react-icons/fi"; // Import the logout icon
+import { FiLogOut, FiMenu, FiX } from "react-icons/fi"; // Import the logout, menu, and close icons
 import { useEffect, useState } from "react";
 import {
   onAuthStateChanged,
@@ -15,6 +15,7 @@ import navLinks from "@/data/navLinks"; // Your navigation links
 
 export default function NavBar() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Track menu toggle state
 
   // Listen for authentication state changes
   useEffect(() => {
@@ -39,10 +40,14 @@ export default function NavBar() {
     }
   };
 
+  // Toggle mobile menu
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <header className="fixed w-full p-2 bg-transparent backdrop-blur-md border-b border-gray-600 z-50">
-      {/* Added border-b */}
-      <div className="flex justify-between items-center max-w-screen-xl mx-auto h-[60px]">
+      <div className="flex justify-between items-center max-w-screen-xl mx-auto h-[60px] px-4">
         {/* Logo on the far left */}
         <div className="flex items-center flex-shrink-0">
           <Link href="/">
@@ -56,22 +61,32 @@ export default function NavBar() {
           </Link>
         </div>
 
-        {/* Nav Links and User Info grouped together on the right */}
-        <div className="flex items-center space-x-8">
-          {/* Navigation Links */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <li
-                key={link.href}
-                className="text-white text-md tracking-wider hover:text-green-400 transition-all list-none"
-              >
-                <Link href={link.href}>{link.name}</Link>
-              </li>
-            ))}
-          </nav>
-            <div className="w-[1px] h-10 bg-gray-600"></div>
+        {/* Hamburger Icon for Mobile and Navigation Links */}
+        <div className="lg:hidden">
+          <button
+            onClick={toggleMenu}
+            className="text-white focus:outline-none"
+          >
+            {isMenuOpen ? <FiX size={28} /> : <FiMenu size={28} />}
+          </button>
+        </div>
 
-          {/* User Account - Show Sign Out Button if User is Logged In */}
+        {/* Navigation Links (visible on desktop, hidden on mobile) */}
+        <nav className="hidden lg:flex items-center space-x-8">
+          {navLinks.map((link) => (
+            <li
+              key={link.href}
+              className="text-white text-md tracking-wider hover:text-green-400 transition-all list-none"
+            >
+              <Link href={link.href}>{link.name}</Link>
+            </li>
+          ))}
+        </nav>
+
+        {/* User Info / Sign-In Button (visible on desktop, hidden on mobile) */}
+        <div className="hidden lg:flex items-center space-x-4">
+          <div className="w-[1px] h-10 bg-gray-600"></div>
+
           <div className="text-green-400 text-md tracking-wider flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
@@ -90,6 +105,40 @@ export default function NavBar() {
             )}
           </div>
         </div>
+
+        {/* Mobile Menu (hidden on desktop, shown on mobile when menu is open) */}
+        {isMenuOpen && (
+          <div className="lg:hidden absolute top-[60px] left-0 w-full bg-gray-900 text-white p-4 shadow-md z-40">
+            <ul className="flex flex-col items-center space-y-4">
+              {navLinks.map((link) => (
+                <li
+                  key={link.href}
+                  className="text-white text-md tracking-wider hover:text-green-400 transition-all"
+                >
+                  <Link href={link.href} onClick={toggleMenu}>
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+              <div className="w-full h-[1px] bg-gray-600 my-2"></div>
+
+              {/* Show Sign In/Out in mobile view */}
+              <div className="text-center">
+                {user ? (
+                  <button
+                    onClick={handleSignOut}
+                    className="bg-[#212C40] text-green-400 px-4 py-2 rounded-lg hover:bg-[#1A2535] flex items-center justify-center transition-colors duration-200"
+                  >
+                    <FiLogOut className="mr-2" />
+                    Sign Out
+                  </button>
+                ) : (
+                  <SignInButton />
+                )}
+              </div>
+            </ul>
+          </div>
+        )}
       </div>
     </header>
   );

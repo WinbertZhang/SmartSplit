@@ -102,7 +102,7 @@ export default function PastSplits() {
   };
 
   return (
-    <div className="flex flex-col items-center relative z-10 mt-20 pt-20">
+    <div className="flex flex-col items-center relative z-10 mt-20 pt-20 px-4">
       <div className="text-center text-[2.5rem] leading-none sm:text-6xl tracking-tight font-bold text-white mb-4 relative z-10">
         Past Splits
       </div>
