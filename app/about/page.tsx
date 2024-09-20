@@ -6,7 +6,7 @@ import { FaLinkedin, FaGithub } from 'react-icons/fa'; // React icons for Linked
 
 const AboutPage = () => {
   return (
-    <div className="flex flex-col items-center mt-20 py-20 relative z-10">
+    <div className="flex flex-col items-center mt-20 py-20 px-4 relative z-10">
       <div className="flex flex-col items-center text-center max-w-screen-md mx-auto space-y-12">
         {/* Page Title */}
         <h1 className="text-white text-4xl sm:text-5xl font-bold tracking-tight">
