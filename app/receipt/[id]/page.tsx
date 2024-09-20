@@ -7,12 +7,13 @@ import { getAuth, onAuthStateChanged } from "firebase/auth"; // Firebase Auth fo
 import { db } from "@/lib/firebaseConfig"; // Firebase configuration
 import SplitTable from "@/components/splitTable"; // SplitTable component for handling item splits
 import FinalizeSummary from "@/components/finalizeSummary"; // FinalizeSummary component to show final amounts
-import { toast, ToastContainer } from "react-toastify"; // Toast for user notifications
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
 import Image from "next/image"; // Optimized image handling in Next.js
 import { ReceiptData, ReceiptItem } from "@/data/receiptTypes"; // Types for receipt data and items
 import { useReceipt, ReceiptProvider } from "@/context/receiptContext"; // Context for receipt data
 import { saveSplitToFirestore } from "@/lib/firebaseUtils"; // Function to save split data to Firestore
+import { ToastContainer } from "react-toastify"; // Toast for user notifications
+import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
+import { showErrorToast, showSuccessToast } from "@/components/toastNotifications";
 
 function SplitPageContent() {
   const { id } = useParams(); // Get the receipt ID from the URL
@@ -22,6 +23,7 @@ function SplitPageContent() {
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null); // State for the receipt URL
   const [subtotal, setSubtotal] = useState<number>(0); // Subtotal for the receipt
   const [tax, setTax] = useState<number>(0); // Tax for the receipt
+  const [tip, setTip] = useState<number>(0); // Tip amount for the receipt
   const [total, setTotal] = useState<number>(0); // Total amount for the receipt
   const [groupMembers, setGroupMembers] = useState<string[]>([]); // State to manage group members
   const [splitData, setSplitData] = useState<Record<string, Set<number>>>({}); // State for tracking which items each member is splitting
@@ -46,13 +48,14 @@ function SplitPageContent() {
 
           // Check if the logged-in user is the owner of the receipt
           if (data.userId !== userId) {
-            toast.error("You are not authorized to view this receipt.");
+            showErrorToast("You are not authorized to view this receipt.");
             setError("You are not authorized to view this receipt.");
           } else {
             setReceiptItems(data.items); // Set the receipt items in state
             setReceiptUrl(data.receiptUrl || null); // Fallback to Firebase URL if available
             setSubtotal(data.subtotal || 0);
             setTax(data.tax || 0);
+            setTip(data.tip || 0);
             setTotal(data.total || 0);
 
             setGroupMembers([userName]); // Set the logged-in user as the group member
@@ -61,11 +64,11 @@ function SplitPageContent() {
             setFinalizeDisabled(false); // Enable Finalize button
           }
         } else {
-          toast.error("No such document exists.");
+          showErrorToast("No such document exists.");
           setError("No such document exists.");
         }
       } catch (error) {
-        toast.error("Error fetching receipt data.");
+        showErrorToast("Error fetching receipt data.");
         setError("Error fetching receipt data.");
       } finally {
         setLoading(false); // Stop loading once data is fetched
@@ -91,7 +94,7 @@ function SplitPageContent() {
           fetchReceiptData(user.uid, userName);
         }
       } else {
-        toast.error("You need to be logged in to view this page.");
+        showErrorToast("You need to be logged in to view this page.");
         setError("You need to be logged in to view this page.");
       }
     });
@@ -130,11 +133,11 @@ function SplitPageContent() {
   // Add a new group member
   const handleAddMember = (newMember: string) => {
     if (groupMembers.length >= 10) {
-      toast.error("You can't add more than 10 members!");
+      showErrorToast("You can't add more than 10 members!");
       return;
     }
     if (groupMembers.includes(newMember)) {
-      toast.error("Member already exists!"); // Show error if duplicate name
+      showErrorToast("Member already exists!"); // Show error if duplicate name
       return;
     }
     setGroupMembers([...groupMembers, newMember]); // Add the new member to the group
@@ -155,7 +158,7 @@ function SplitPageContent() {
   // Rename a group member
   const handleRenameMember = (oldName: string, newName: string) => {
     if (groupMembers.includes(newName)) {
-      toast.error("Member already exists!"); // Show error if duplicate name
+      showErrorToast("Member already exists!"); // Show error if duplicate name
       return;
     }
 
@@ -212,15 +215,14 @@ function SplitPageContent() {
     // Save the split details and items with splitters to Firestore
     try {
       await saveSplitToFirestore(receiptId, splitDetails, updatedItems); // Save splitters and amounts
-      toast.success("Split details saved successfully!"); // Show success toast
-    } catch (error) {
-      toast.error("Error saving split details to Firestore."); // Show error toast
-    }
+      showSuccessToast("Split details saved successfully!"); // Show success toast
 
-    // Set the calculated amounts and show the summary
-    setMemberOwedAmounts(memberOwedWithTax); // Update the state with the owed amounts
-    setShowSummary(true); // Show summary
-    setFinalizeDisabled(true); // Disable the finalize button
+      setMemberOwedAmounts(memberOwedWithTax); // Update the state with the owed amounts
+      setShowSummary(true); // Show summary
+      setFinalizeDisabled(true); // Disable the finalize button
+    } catch (error) {
+      showErrorToast("Error saving split details to Firestore."); // Show error toast
+    }
   };
 
   if (loading) {
@@ -260,6 +262,7 @@ function SplitPageContent() {
             onFinalizeDisabledChange={setFinalizeDisabled}
             subtotal={subtotal}
             tax={tax}
+            tip={tip}
             total={total}
           />
 
@@ -322,7 +325,6 @@ function SplitPageContent() {
         />
       )}
 
-      <ToastContainer />
     </div>
   );
 }
@@ -334,6 +336,7 @@ export default function SplitPage() {
       <Suspense fallback={<p>Loading split page...</p>}>
         <SplitPageContent />
       </Suspense>
+      <ToastContainer />
     </ReceiptProvider>
   );
 }

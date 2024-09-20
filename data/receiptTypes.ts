@@ -13,7 +13,7 @@ export interface ReceiptData {
   items: ReceiptItem[];  // Array of items on the receipt
   subtotal: number;  // Subtotal of the receipt
   tax: number;  // Tax on the receipt
-  tip?: number;  // Optional tip amount
+  tip: number;  // Optional tip amount
   total: number;  // Total amount of the receipt
   name?: string;  // Optional name of the receipt
   category?: string;  // Optional category of the receipt

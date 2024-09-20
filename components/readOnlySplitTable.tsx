@@ -7,6 +7,7 @@ interface ReadOnlySplitTableProps {
   splitData: Record<string, Set<number>>;
   subtotal: number;
   tax: number;
+  tip: number;
   total: number;
 }
 
@@ -16,6 +17,7 @@ export default function ReadOnlySplitTable({
   splitData,
   subtotal,
   tax,
+  tip,
   total,
 }: ReadOnlySplitTableProps) {
   const colors = [
@@ -72,13 +74,16 @@ export default function ReadOnlySplitTable({
         </table>
       </div>
 
-      {/* Display Subtotal, Tax, and Total */}
+      {/* Display Subtotal, Tax, Tip, and Total */}
       <div className="px-8 py-2 bg-gray-700 text-white text-xl">
         <p className="mb-2 text-right">
           Subtotal: <span>${subtotal.toFixed(2)}</span>
         </p>
         <p className="mb-2 text-right">
           Tax: <span>${tax.toFixed(2)}</span>
+        </p>
+        <p className="mb-2 text-right">
+          Tip: <span>${tip.toFixed(2)}</span>
         </p>
         <p className="font-bold text-right">
           Total: <span>${total.toFixed(2)}</span>

@@ -29,7 +29,7 @@ export default function FinalizeSummary({
         closeOnClick: true,
         pauseOnHover: false,
         draggable: false,
-        theme: "dark", // Set a dark theme to match your app's style
+        theme: "light",
       });
     });
   };

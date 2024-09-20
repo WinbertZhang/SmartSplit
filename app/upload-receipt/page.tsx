@@ -59,15 +59,10 @@ export default function ReceiptPage() {
       const cleanedData = await processReceiptImage(uploadedImage);
 
       // Extract Subtotal, Tax, and Total from the cleaned data
-      const subtotal = cleanedData.Subtotal
-        ? parseFloat(cleanedData.Subtotal.replace(/[^\d.]/g, ""))
-        : 0;
-      const tax = cleanedData.Tax
-        ? parseFloat(cleanedData.Tax.replace(/[^\d.]/g, ""))
-        : 0;
-      const total = cleanedData.Total
-        ? parseFloat(cleanedData.Total.replace(/[^\d.]/g, ""))
-        : 0;
+      const subtotal = 0;
+      const tax = 0;
+      const tip = 0;
+      const total = 0;
 
       const createdAt = new Date(); // Set the current date and time
 
@@ -91,6 +86,7 @@ export default function ReceiptPage() {
         items: itemsArray,
         subtotal,
         tax,
+        tip,
         total,
         receiptUrl: downloadURL,
         userId: user.uid,
@@ -99,10 +95,9 @@ export default function ReceiptPage() {
       };
 
       setReceiptData(receiptDataToSave); // Set the receipt data in state
-      showSuccessToast("Receipt data and image URL saved to Firebase successfully!");
+      showSuccessToast("Receipt data processed successfully!"); // Show success toast
     } catch (error) {
-      console.error("Error processing receipt:", error);
-      showErrorToast("Error processing receipt!");
+      showErrorToast("Error processing receipt! Please try again later.");
     }
 
     setLoading(false); // Set loading state to false after processing is complete
@@ -272,6 +267,7 @@ export default function ReceiptPage() {
                 receiptItems={receiptData.items}
                 subtotal={receiptData.subtotal}
                 tax={receiptData.tax}
+                tip={receiptData.tip}
                 total={receiptData.total}
                 onEditItem={editItem}
                 onRemoveItem={removeItem}

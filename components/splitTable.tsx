@@ -12,6 +12,7 @@ interface SplitTableProps {
   onFinalizeDisabledChange: (disabled: boolean) => void; // Added to notify parent about button state
   subtotal: number;
   tax: number;
+  tip: number;
   total: number;
 }
 export default function SplitTable({
@@ -24,6 +25,7 @@ export default function SplitTable({
   onFinalizeDisabledChange,
   subtotal,
   tax,
+  tip,
   total,
 }: SplitTableProps) {
   const [editingMember, setEditingMember] = useState<string | null>(null);
@@ -201,6 +203,9 @@ export default function SplitTable({
         </p>
         <p className="mb-2 text-right">
           Tax: <span>${tax.toFixed(2)}</span>
+        </p>
+        <p className="mb-2 text-right">
+          Tip: <span>${tip.toFixed(2)}</span>
         </p>
         <p className="font-bold text-right">
           Total: <span>${total.toFixed(2)}</span>

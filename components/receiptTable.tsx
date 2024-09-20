@@ -6,6 +6,7 @@ interface ReceiptTableProps {
   receiptItems: ReceiptItem[];
   subtotal: number;
   tax: number;
+  tip: number;
   total: number;
   onEditItem: (
     id: number,
@@ -14,6 +15,7 @@ interface ReceiptTableProps {
       price: number;
       subtotal?: number;
       tax?: number;
+      tip?: number;
       total?: number;
     }>
   ) => void;
@@ -24,6 +26,7 @@ interface ReceiptTableProps {
 export default function ReceiptTable({
   receiptItems,
   tax,
+  tip,
   onEditItem,
   onRemoveItem,
   onAddNewItem,
@@ -34,7 +37,7 @@ export default function ReceiptTable({
 
   // Calculate subtotal and total
   const subtotal = receiptItems.reduce((sum, item) => sum + item.price, 0);
-  const total = subtotal + tax;
+  const total = subtotal + tax + tip;
 
   // Function to handle number-only input and dynamically format price
   const handlePriceInput = (value: string): string => {
@@ -148,6 +151,21 @@ export default function ReceiptTable({
               onChange={(e) =>
                 onEditItem(0, {
                   tax: parseFloat(handlePriceInput(e.target.value)) || 0,
+                })
+              }
+              className="bg-transparent text-white border-gray-400 focus:outline-none text-right ml-1 w-16"
+            />
+          </span>
+        </p>
+        <p className="mb-2">
+          Tip: $
+          <span className="inline-block">
+            <input
+              type="text"
+              value={tip.toFixed(2)}
+              onChange={(e) =>
+                onEditItem(0, {
+                  tip: parseFloat(handlePriceInput(e.target.value)) || 0,
                 })
               }
               className="bg-transparent text-white border-gray-400 focus:outline-none text-right ml-1 w-16"

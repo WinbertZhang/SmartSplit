@@ -2,12 +2,14 @@ export default function ReceiptViewTable({
   receiptItems,
   subtotal,
   tax,
+  tip,
   total,
   onToggleSplit, // Make it optional
 }: {
   receiptItems: any[];
   subtotal: number;
   tax: number;
+  tip: number;
   total: number;
   onToggleSplit?: (id: number) => void; // Make it optional
 }) {
@@ -41,6 +43,7 @@ export default function ReceiptViewTable({
       <div className="px-4 py-2 text-white text-lg">
         <p className="mb-2">Subtotal: ${subtotal.toFixed(2)}</p>
         <p className="mb-2">Tax: ${tax.toFixed(2)}</p>
+        <p className="mb-2">Tip: ${tax.toFixed(2)}</p>
         <p className="font-bold">Total: ${total.toFixed(2)}</p>
       </div>
     </div>

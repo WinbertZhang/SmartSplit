@@ -25,6 +25,7 @@ export default function PastSplitsView() {
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [subtotal, setSubtotal] = useState<number>(0);
   const [tax, setTax] = useState<number>(0);
+  const [tip, setTip] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [splitData, setSplitData] = useState<Record<string, Set<number>>>({});
@@ -49,6 +50,7 @@ export default function PastSplitsView() {
         setReceiptUrl(data.receiptUrl || null);
         setSubtotal(data.subtotal || 0);
         setTax(data.tax || 0);
+        setTip(data.tip || 0);
         setTotal(data.total || 0);
 
         // Check if splitDetails exist, if not, set splitFinalized to false
@@ -160,6 +162,7 @@ export default function PastSplitsView() {
             splitData={splitData}
             subtotal={subtotal}
             tax={tax}
+            tip={tip}
             total={total}
           />
 
