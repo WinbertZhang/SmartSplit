@@ -65,65 +65,69 @@ export default function ReceiptTable({
   };
 
   return (
-    <div className="rounded-lg shadow-lg overflow-hidden bg-[#353B47]">
-      <table className="min-w-full text-white">
-        <thead>
-          <tr className="bg-[#1A2535]">
-            <th className="py-3 px-4 text-left font-medium text-white"></th>
-            <th className="py-3 px-4 text-left font-medium text-white">Item</th>
-            <th className="py-3 px-4 text-right font-medium text-white">
-              Price
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {receiptItems.map((item) => (
-            <tr
-              key={item.id}
-              className="border-t border-gray-600 hover:bg-[#4A4F5C]"
-            >
-              <td className="py-3 px-4">
-                <button onClick={() => onRemoveItem(item.id)}>
-                  <FaTimes className="text-red-500" />
-                </button>
-              </td>
-              <td className="py-3 px-4">
-                <input
-                  type="text"
-                  value={item.item}
-                  onChange={(e) =>
-                    onEditItem(item.id, { item: e.target.value })
-                  }
-                  className="bg-transparent text-white border-gray-400 focus:outline-none w-full"
-                />
-              </td>
-              <td className="py-3 px-4 text-right">
-                <input
-                  type="text"
-                  value={"$" + item.price.toFixed(2)}
-                  onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                  className="bg-transparent text-white w-full text-right focus:outline-none"
-                />
-              </td>
+    <div className="rounded-lg shadow-lg bg-[#353B47] w-full">
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-white">
+          <thead>
+            <tr className="bg-[#1A2535]">
+              <th className="py-3 px-2 text-left font-medium text-white"></th>
+              <th className="py-3 px-2 text-left font-medium text-white">
+                Item
+              </th>
+              <th className="py-3 px-4 text-right font-medium text-white">
+                Price
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {receiptItems.map((item) => (
+              <tr
+                key={item.id}
+                className="border-t border-gray-600 hover:bg-[#4A4F5C]"
+              >
+                <td className="py-3 px-2">
+                  <button onClick={() => onRemoveItem(item.id)}>
+                    <FaTimes className="text-red-500" />
+                  </button>
+                </td>
+                <td className="py-3 px-2">
+                  <input
+                    type="text"
+                    value={item.item}
+                    onChange={(e) =>
+                      onEditItem(item.id, { item: e.target.value })
+                    }
+                    className="bg-transparent text-white border-gray-400 focus:outline-none w-full"
+                  />
+                </td>
+                <td className="py-3 px-4 text-right">
+                  <input
+                    type="text"
+                    value={"$" + item.price.toFixed(2)}
+                    onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                    className="bg-transparent text-white w-full text-right focus:outline-none"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <div className="px-4 py-4 flex justify-between items-center">
+      <div className="px-4 py-4 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
         <input
           type="text"
           value={newItemName}
           onChange={(e) => setNewItemName(e.target.value)}
           placeholder="New item name"
-          className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
+          className="bg-transparent text-white border-b border-gray-400 focus:outline-none w-full sm:w-auto"
         />
         <input
           type="text"
           value={newItemPrice}
           onChange={(e) => setNewItemPrice(handlePriceInput(e.target.value))}
           placeholder="Price"
-          className="bg-transparent text-white border-b border-gray-400 focus:outline-none"
+          className="bg-transparent text-white border-b border-gray-400 focus:outline-none w-full sm:w-auto"
         />
         <button onClick={handleAddNewItem}>
           <FaPlus className="text-[#35B2EB]" />

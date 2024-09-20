@@ -208,10 +208,10 @@ export default function ReceiptPage() {
 
   return (
     <div className="items-center z-10 mt-20 pt-20">
-      <div className="text-center">
+      <div className="text-center max-w-lg mx-auto">
         <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2">Upload Receipt</h2>
         <p className="text-gray-400 mb-6">
-          Upload your receipt to split expenses easily.
+          Upload your receipt, and the app will process it automatically. After a short loading time, all the items from the receipt will be parsed and displayed for you to easily edit and confirm.
         </p>
       </div>
       <div className="max-w-2xl sm:max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
@@ -254,7 +254,7 @@ export default function ReceiptPage() {
           )}
 
           {/* Instructions for editing receipt items */}
-          <p className="text-md text-gray-400 px-4 py-2">
+          <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
             <span className="text-gray-300 font-bold text-lg"> Tip: </span> <br></br>To edit names and prices, simply <span className="text-gray-300 font-bold">click</span> on the field you would like to edit and begin typing. For prices, make sure to press on the
             <span className="text-gray-300 font-bold"> right side </span> of the field to enter the correct value.
           </p>

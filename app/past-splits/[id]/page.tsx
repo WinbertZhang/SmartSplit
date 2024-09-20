@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import ReadOnlySplitTable from "@/components/readOnlySplitTable";
@@ -19,6 +19,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 export default function PastSplitsView() {
   const { id } = useParams();
   const receiptId = Array.isArray(id) ? id[0] : id;
+  const router = useRouter();
 
   const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export default function PastSplitsView() {
   const [memberOwedAmounts, setMemberOwedAmounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [splitFinalized, setSplitFinalized] = useState<boolean>(true); // New state to track if split is finalized
 
   const colors = [
     "#f3e79b", "#fac484", "#f8a07e", "#eb7f86", "#ce6693",
@@ -48,26 +50,32 @@ export default function PastSplitsView() {
         setSubtotal(data.subtotal || 0);
         setTax(data.tax || 0);
         setTotal(data.total || 0);
-        setGroupMembers(data.splitDetails.map((detail) => detail.name));
 
-        const amounts: Record<string, number> = {};
-        data.splitDetails.forEach((detail) => {
-          amounts[detail.name] = detail.amount;
-        });
-        setMemberOwedAmounts(amounts);
+        // Check if splitDetails exist, if not, set splitFinalized to false
+        if (data.splitDetails && data.splitDetails.length > 0) {
+          setGroupMembers(data.splitDetails.map((detail) => detail.name));
 
-        const splitInfo: Record<string, Set<number>> = {};
-        data.items.forEach((item) => {
-          if (item.splitters) {
-            item.splitters.forEach((splitter) => {
-              if (!splitInfo[splitter]) {
-                splitInfo[splitter] = new Set();
-              }
-              splitInfo[splitter].add(item.id);
-            });
-          }
-        });
-        setSplitData(splitInfo);
+          const amounts: Record<string, number> = {};
+          data.splitDetails.forEach((detail) => {
+            amounts[detail.name] = detail.amount;
+          });
+          setMemberOwedAmounts(amounts);
+
+          const splitInfo: Record<string, Set<number>> = {};
+          data.items.forEach((item) => {
+            if (item.splitters) {
+              item.splitters.forEach((splitter) => {
+                if (!splitInfo[splitter]) {
+                  splitInfo[splitter] = new Set();
+                }
+                splitInfo[splitter].add(item.id);
+              });
+            }
+          });
+          setSplitData(splitInfo);
+        } else {
+          setSplitFinalized(false); // Mark split as not finalized
+        }
       } else {
         toast.error("No such document exists.");
         setError("No such document exists.");
@@ -105,9 +113,33 @@ export default function PastSplitsView() {
     return <p>{error}</p>;
   }
 
+  // Display message if the split is not finalized
+  if (!splitFinalized) {
+    return (
+      <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-24 mb-4">
+        <h2 className="text-white text-2xl font-bold mb-6">Split Details Not Finalized</h2>
+        <p className="text-gray-400 mb-6">
+          It looks like the split details for this receipt have not been finalized yet.
+        </p>
+        <button
+          onClick={() => router.push(`/receipt/${receiptId}`)} // Navigate to the split page
+          className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all"
+        >
+          Finalize Split Now
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-20 mb-4">
-      <h2 className="text-white text-2xl font-bold mb-6">Receipt Summary</h2>
+    <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-24 mb-4">
+      <h2 className="text-white text-4xl font-bold mb-6">Receipt Summary</h2>
+      <button
+          onClick={() => router.push(`/receipt/${receiptId}`)} // Navigate to the split page
+          className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all"
+        >
+          Edit Receipt
+        </button>
 
       {receiptUrl && (
         <div className="my-6 grid justify-center">
@@ -160,7 +192,6 @@ export default function PastSplitsView() {
               height={300}
               width={300}
             />
-
           </div>
 
           <FinalizeSummary

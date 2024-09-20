@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebaseConfig"; // Firebase authentication configuration
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; // Firebase authentication state listener
-import { fetchUserExpenses, deleteExpenseFromFirestore } from "@/lib/firebaseUtils"; // Fetch and delete utilities for Firestore
+import {
+  fetchUserExpenses,
+  deleteExpenseFromFirestore,
+} from "@/lib/firebaseUtils"; // Fetch and delete utilities for Firestore
 import { useRouter } from "next/navigation"; // Next.js router for navigation
 import Image from "next/image"; // Optimized image handling in Next.js
 import { ReceiptData } from "@/data/receiptTypes"; // Types for Receipt Data
@@ -15,7 +18,7 @@ export default function PastSplits() {
   const [expenses, setExpenses] = useState<ReceiptData[]>([]);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]); // Tracks selected expenses for deletion
   const [isSelectMode, setIsSelectMode] = useState(false); // Toggles selection mode
-  const [sortOrder, setSortOrder] = useState<'Newest' | 'Oldest'>('Newest'); // Controls the sorting of expenses
+  const [sortOrder, setSortOrder] = useState<"Newest" | "Oldest">("Newest"); // Controls the sorting of expenses
   const router = useRouter(); // Router for navigation between pages
 
   // Fetch expenses for the logged-in user from Firestore
@@ -23,14 +26,15 @@ export default function PastSplits() {
     const fetchExpenses = async () => {
       if (user) {
         const userExpenses = await fetchUserExpenses(user.uid);
-        const sortedExpenses = userExpenses.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by Newest
+        const sortedExpenses = userExpenses.sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        ); // Sort by Newest
         setExpenses(sortedExpenses); // Store fetched and sorted expenses in state
       }
     };
-  
+
     fetchExpenses(); // Trigger expense fetching when user is set
   }, [user]);
-  
 
   // Listen to Firebase authentication state changes
   useEffect(() => {
@@ -46,9 +50,9 @@ export default function PastSplits() {
   }, [router]);
 
   // Function to sort expenses based on createdAt (either Newest or Oldest)
-  const sortExpenses = (order: 'Newest' | 'Oldest') => {
+  const sortExpenses = (order: "Newest" | "Oldest") => {
     const sortedExpenses = [...expenses].sort((a, b) => {
-      if (order === 'Newest') {
+      if (order === "Newest") {
         return b.createdAt.getTime() - a.createdAt.getTime(); // Newest first
       } else {
         return a.createdAt.getTime() - b.createdAt.getTime(); // Oldest first
@@ -67,25 +71,32 @@ export default function PastSplits() {
 
   // Handle selecting/deselecting an expense for deletion
   const handleSelectExpense = (expenseId: string) => {
-    setSelectedExpenses((prevSelected) =>
-      prevSelected.includes(expenseId)
-        ? prevSelected.filter((id) => id !== expenseId) // Deselect if already selected
-        : [...prevSelected, expenseId] // Add to selected list if not selected
+    setSelectedExpenses(
+      (prevSelected) =>
+        prevSelected.includes(expenseId)
+          ? prevSelected.filter((id) => id !== expenseId) // Deselect if already selected
+          : [...prevSelected, expenseId] // Add to selected list if not selected
     );
   };
 
   // Handle deletion of selected expenses from Firestore
   const handleDeleteSelected = async () => {
-    const confirmed = confirm("Are you sure you want to delete the selected splits?");
+    const confirmed = confirm(
+      "Are you sure you want to delete the selected splits?"
+    );
     if (confirmed) {
       try {
         // Delete each selected expense from Firestore
         await Promise.all(
-          selectedExpenses.map((expenseId) => deleteExpenseFromFirestore(expenseId))
+          selectedExpenses.map((expenseId) =>
+            deleteExpenseFromFirestore(expenseId)
+          )
         );
         // Remove the deleted expenses from the UI
         setExpenses((prevExpenses) =>
-          prevExpenses.filter((expense) => !selectedExpenses.includes(expense.id!))
+          prevExpenses.filter(
+            (expense) => !selectedExpenses.includes(expense.id!)
+          )
         );
         setSelectedExpenses([]); // Clear selected expenses
         setIsSelectMode(false); // Exit select mode
@@ -135,7 +146,9 @@ export default function PastSplits() {
           <select
             id="sortOrder"
             value={sortOrder}
-            onChange={(e) => sortExpenses(e.target.value as 'Newest' | 'Oldest')}
+            onChange={(e) =>
+              sortExpenses(e.target.value as "Newest" | "Oldest")
+            }
             className="bg-gray-700 text-white px-2 py-2 rounded-lg"
           >
             <option value="Newest">Newest</option>
@@ -159,7 +172,7 @@ export default function PastSplits() {
                   key={expense.id}
                   className={`relative bg-gray-800 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:bg-gray-700 border border-green-400 group ${
                     isSelectMode ? "cursor-default" : ""
-                  }`} // Disable click events in select mode
+                  } flex flex-col items-center`}
                   onClick={() => handleExpenseClick(expense.id!)}
                 >
                   {/* Checkbox for selection (only in select mode) */}
@@ -176,7 +189,7 @@ export default function PastSplits() {
                   <p className="text-lg font-semibold mb-2 text-center">
                     {expense.createdAt instanceof Date
                       ? expense.createdAt.toLocaleDateString() // Format date if valid
-                      : "Unknown Date"} 
+                      : "Unknown Date"}
                   </p>
 
                   {/* Display the receipt image if available */}
@@ -195,7 +208,7 @@ export default function PastSplits() {
 
                   {/* Hover effect to show participants if not in select mode */}
                   {!isSelectMode && (
-                    <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
+                    <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
                       <p className="font-bold text-center mb-2">
                         Participants: {expense.splitDetails.length}
                       </p>
