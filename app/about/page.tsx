@@ -15,7 +15,7 @@ const AboutPage = () => {
 
         {/* Intro Section */}
         <p className="text-gray-300 sm:text-lg leading-relaxed max-w-xl">
-          Smart Split simplifies shared expenses, making it effortless to split bills with roommates, friends, or family. Say goodbye to awkward calculations and let everyone pay for exactly what they consumed.
+          Smart Split is your solution for calculating restaurant bills or shared grocery receipts. Simply snap a picture or upload an image of your receipt, and our app will automatically extract and display the item names and amounts, saving you time on your next grocery run or dinner bill while keeping track of your past split expenses.
         </p>
 
         {/* Development Credits with Profile Pics and Social Icons */}
@@ -81,7 +81,7 @@ const AboutPage = () => {
 
           {/* Developer Description */}
           <p className="mt-8 text-lg text-gray-400">
-            Built by <span className="text-green-400 font-bold">Winbert Zhang</span> and <span className="text-green-400 font-bold">William Huang</span>, Smart Split was created to provide a smarter, fairer way to split shared costs with friends, roommates, and family.
+            Smart Split is built by <span className="text-green-400 font-bold">Winbert Zhang</span> and <span className="text-green-400 font-bold">William Huang</span> to make splitting shared costs smarter and simpler. From splitting restaurant bills to shared grocery receipts, we aim to take the hassle out of managing expenses.
           </p>
         </div>
 
@@ -89,7 +89,7 @@ const AboutPage = () => {
         <div className="bg-green-500 text-white p-8 rounded-lg shadow-md w-full">
           <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
           <p className="text-lg">
-            At Smart Split, we aim to remove the stress from dividing expenses. Whether it's a dinner with friends or a weekend getaway, we make the process seamless, quick, and fair.
+            At Smart Split, we aim to remove the stress from dividing expenses. Whether it's a dinner with friends or a shared grocery trip, our app simplifies the process, making it quick and fair for everyone.
           </p>
         </div>
 
@@ -97,7 +97,7 @@ const AboutPage = () => {
         <div className="bg-[#1B2433] text-white p-8 rounded-lg shadow-md w-full">
           <h2 className="text-2xl font-semibold mb-4">Get Started with Smart Split</h2>
           <p className="text-lg text-gray-400">
-            Ready to transform how you split bills? Start using Smart Split today and experience a new, hassle-free way to manage shared costs.
+            Ready to transform how you split bills? Start using Smart Split today and experience a hassle-free way to manage shared costs.
           </p>
           <Link href="/upload-receipt" className="mt-6 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all shadow-lg inline-block">
             Upload Receipt

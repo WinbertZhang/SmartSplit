@@ -22,6 +22,7 @@ export default function ReceiptPage() {
   const [imageURL, setImageURL] = useState<string | null>(null); // State for the image URL
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null); // State for storing receipt data
   const [loading, setLoading] = useState(false); // Loading state for when the receipt is being processed
+  const [manualEntryMode, setManualEntryMode] = useState(false); // Toggle for manual entry mode
   const router = useRouter(); // Router for navigating between pages
   const auth = getAuth(); // Get Firebase Auth instance
 
@@ -43,61 +44,80 @@ export default function ReceiptPage() {
     setImageURL(URL.createObjectURL(uploadedImage)); // Set local URL for previewing the image
     setLoading(true); // Set loading state to true
 
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error("User not authenticated");
+    if (!manualEntryMode) {
+      try {
+        const user = auth.currentUser;
+        if (!user) {
+          throw new Error("User not authenticated");
+        }
+
+        // Upload the image to Firebase Storage
+        const downloadURL = await uploadImageToFirebaseStorage(
+          uploadedImage,
+          user.uid
+        );
+        if (!downloadURL) {
+          throw new Error("Failed to upload image");
+        }
+
+        // Process the uploaded receipt image using Gemini API
+        const cleanedData = await processReceiptImage(uploadedImage);
+
+        // Extract Subtotal, Tax, and Total from the cleaned data
+        const subtotal = 0;
+        const tax = 0;
+        const tip = 0;
+        const total = 0;
+
+        const createdAt = new Date(); // Set the current date and time
+
+        // Filter out non-item keys like "Subtotal", "Tax", and "Total" from the cleaned data
+        const filteredData = Object.entries(cleanedData).filter(
+          ([key]) => !["Subtotal", "Tax", "Total"].includes(key)
+        );
+
+        // Convert the cleaned data into an array of receipt items
+        const itemsArray: ReceiptItem[] = filteredData.map(
+          ([itemName, itemPrice], index) => ({
+            id: index + 1,
+            item: itemName,
+            price:
+              parseFloat((itemPrice as string).replace(/[^\d.]/g, "")) || 0,
+            splitters: [],
+          })
+        );
+
+        // Create the receipt data object to save to Firestore
+        const receiptDataToSave: ReceiptData = {
+          items: itemsArray,
+          subtotal,
+          tax,
+          tip,
+          total,
+          receiptUrl: downloadURL,
+          userId: user.uid,
+          createdAt,
+          splitDetails: [],
+        };
+
+        setReceiptData(receiptDataToSave); // Set the receipt data in state
+        showSuccessToast("Receipt data processed successfully!"); // Show success toast
+      } catch (error) {
+        showErrorToast("Error processing receipt! Please try again later.");
       }
-
-      // Upload the image to Firebase Storage
-      const downloadURL = await uploadImageToFirebaseStorage(uploadedImage, user.uid);
-      if (!downloadURL) {
-        throw new Error("Failed to upload image");
-      }
-
-      // Process the uploaded receipt image using Gemini API
-      const cleanedData = await processReceiptImage(uploadedImage);
-
-      // Extract Subtotal, Tax, and Total from the cleaned data
-      const subtotal = 0;
-      const tax = 0;
-      const tip = 0;
-      const total = 0;
-
-      const createdAt = new Date(); // Set the current date and time
-
-      // Filter out non-item keys like "Subtotal", "Tax", and "Total" from the cleaned data
-      const filteredData = Object.entries(cleanedData).filter(
-        ([key]) => !["Subtotal", "Tax", "Total"].includes(key)
-      );
-
-      // Convert the cleaned data into an array of receipt items
-      const itemsArray: ReceiptItem[] = filteredData.map(
-        ([itemName, itemPrice], index) => ({
-          id: index + 1,
-          item: itemName,
-          price: parseFloat((itemPrice as string).replace(/[^\d.]/g, "")) || 0,
-          splitters: [],
-        })
-      );
-
-      // Create the receipt data object to save to Firestore
-      const receiptDataToSave: ReceiptData = {
-        items: itemsArray,
-        subtotal,
-        tax,
-        tip,
-        total,
-        receiptUrl: downloadURL,
-        userId: user.uid,
-        createdAt,
+    } else {
+      // Skip API processing and go directly to manual entry mode with empty table
+      setReceiptData({
+        items: [],
+        subtotal: 0,
+        tax: 0,
+        tip: 0,
+        total: 0,
+        receiptUrl: "",
+        userId: auth.currentUser?.uid || "",
+        createdAt: new Date(),
         splitDetails: [],
-      };
-
-      setReceiptData(receiptDataToSave); // Set the receipt data in state
-      showSuccessToast("Receipt data processed successfully!"); // Show success toast
-    } catch (error) {
-      showErrorToast("Error processing receipt! Please try again later.");
+      });
     }
 
     setLoading(false); // Set loading state to false after processing is complete
@@ -125,10 +145,15 @@ export default function ReceiptPage() {
     return jsonResponse.cleanedJson; // Return the cleaned JSON data
   };
 
+  // Add a manual entry toggle
+  const toggleManualEntryMode = () => {
+    setManualEntryMode((prev) => !prev); // Toggle manual entry mode
+  };
+
   // Recalculate the subtotal and total based on the items and tax
-  const recalculateTotals = (items: ReceiptItem[], tax: number) => {
+  const recalculateTotals = (items: ReceiptItem[], tax: number, tip: number) => {
     const subtotal = items.reduce((acc, item) => acc + item.price, 0); // Calculate subtotal
-    const total = subtotal + tax; // Calculate total by adding tax
+    const total = subtotal + tax + tip; // Calculate total by adding tax
     return { subtotal, total };
   };
 
@@ -140,6 +165,7 @@ export default function ReceiptPage() {
       price: number;
       subtotal?: number;
       tax?: number;
+      tip?: number;
       total?: number;
     }>
   ) => {
@@ -147,15 +173,25 @@ export default function ReceiptPage() {
       if (id === 0) {
         const { subtotal, total } = recalculateTotals(
           receiptData.items,
-          updatedItem.tax || receiptData.tax
+          updatedItem.tax || receiptData.tax,
+          updatedItem.tip || receiptData.tip
         );
         setReceiptData({ ...receiptData, ...updatedItem, subtotal, total }); // Update the receipt data
       } else {
         const updatedItems = receiptData.items.map((item) =>
           item.id === id ? { ...item, ...updatedItem } : item
         );
-        const { subtotal, total } = recalculateTotals(updatedItems, receiptData.tax);
-        setReceiptData({ ...receiptData, items: updatedItems, subtotal, total });
+        const { subtotal, total } = recalculateTotals(
+          updatedItems,
+          receiptData.tax,
+          receiptData.tip
+        );
+        setReceiptData({
+          ...receiptData,
+          items: updatedItems,
+          subtotal,
+          total,
+        });
       }
     }
   };
@@ -164,7 +200,11 @@ export default function ReceiptPage() {
   const removeItem = (id: number) => {
     if (receiptData) {
       const updatedItems = receiptData.items.filter((item) => item.id !== id); // Filter out the removed item
-      const { subtotal, total } = recalculateTotals(updatedItems, receiptData.tax);
+      const { subtotal, total } = recalculateTotals(
+        updatedItems,
+        receiptData.tax,
+        receiptData.tip
+      );
       setReceiptData({ ...receiptData, items: updatedItems, subtotal, total }); // Update the receipt data
     }
   };
@@ -173,7 +213,11 @@ export default function ReceiptPage() {
   const addNewItem = (newItem: ReceiptItem) => {
     if (receiptData) {
       const updatedItems = [...receiptData.items, newItem]; // Add the new item to the list
-      const { subtotal, total } = recalculateTotals(updatedItems, receiptData.tax);
+      const { subtotal, total } = recalculateTotals(
+        updatedItems,
+        receiptData.tax,
+        receiptData.tip
+      );
       setReceiptData({ ...receiptData, items: updatedItems, subtotal, total }); // Update the receipt data
     }
   };
@@ -182,16 +226,23 @@ export default function ReceiptPage() {
   const handleConfirm = async () => {
     if (receiptData) {
       try {
-        const { subtotal, total } = recalculateTotals(receiptData.items, receiptData.tax || 0);
+        const { subtotal, total } = recalculateTotals(
+          receiptData.items,
+          receiptData.tax || 0,
+          receiptData.tip || 0
+        );
         const updatedReceiptData = { ...receiptData, subtotal, total }; // Update the receipt data
 
         const user = auth.currentUser;
         if (!user) {
           throw new Error("User not authenticated");
         }
-        
+
         // Save receipt items to Firestore
-        const receiptId = await saveReceiptItemsToFirestore(user.uid, updatedReceiptData);
+        const receiptId = await saveReceiptItemsToFirestore(
+          user.uid,
+          updatedReceiptData
+        );
         setImageURL(imageURL); // Set the image URL
         router.push(`/receipt/${receiptId}`); // Navigate to the receipt details page
       } catch (error) {
@@ -204,10 +255,18 @@ export default function ReceiptPage() {
   return (
     <div className="items-center z-10 mt-20 pt-20">
       <div className="text-center max-w-lg mx-auto">
-        <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2">Upload Receipt</h2>
-        <p className="text-gray-400 mb-6">
-          Upload your receipt, and the app will process it automatically. After a short loading time, all the items from the receipt will be parsed and displayed for you to easily edit and confirm.
+        <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2">
+          Upload Receipt
+        </h2>
+        <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
+          <span className="text-gray-300 font-bold">Automatic Mode: </span> 
+          Upload your receipt, and the app will automatically extract all items and prices. 
+          After a short loading time, you can easily edit and confirm the data.
+          <br /><br />
+          <span className="text-gray-300 font-bold">Manual Mode: </span> 
+          Switch to manual entry to input the items yourself without uploading a receipt image.
         </p>
+
       </div>
       <div className="max-w-2xl sm:max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
         {!loading && !receiptData && (
@@ -219,18 +278,34 @@ export default function ReceiptPage() {
                 onClick={() => document.getElementById("file-input")?.click()} // Trigger the file input dialog
               >
                 <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
-                <span className="text-md sm:text-lg font-semibold">Upload Receipt</span>
+                <span className="text-md sm:text-lg font-semibold">
+                  Upload Receipt
+                </span>
               </button>
               <input
                 id="file-input"
                 type="file"
                 accept="image/"
-                onChange={(e) =>
-                  e.target.files && handleImageUpload(e.target.files[0]) // Handle file upload
+                onChange={
+                  (e) => e.target.files && handleImageUpload(e.target.files[0]) // Handle file upload
                 }
                 className="hidden"
               />
             </div>
+          </div>
+        )}
+        {!receiptData && (
+          <div className="flex justify-center mb-6">
+            <button
+              className={`p-3 rounded-md text-white ${
+                manualEntryMode ? "bg-green-500" : "bg-blue-500"
+              }`}
+              onClick={toggleManualEntryMode}
+            >
+              {manualEntryMode
+                ? "Switch to Automatic Upload"
+                : "Switch to Manual Entry"}
+            </button>
           </div>
         )}
 
@@ -249,10 +324,16 @@ export default function ReceiptPage() {
           )}
 
           {/* Instructions for editing receipt items */}
+          {receiptData && (
           <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
-            <span className="text-gray-300 font-bold text-lg"> Tip: </span> <br></br>To edit names and prices, simply <span className="text-gray-300 font-bold">click</span> on the field you would like to edit and begin typing. For prices, make sure to press on the
-            <span className="text-gray-300 font-bold"> right side </span> of the field to enter the correct value.
-          </p>
+            <span className="text-gray-300 font-bold text-lg"> Tip: </span>{" "}
+            <br></br>To edit names and prices, simply{" "}
+            <span className="text-gray-300 font-bold">click</span> on the field
+            you would like to edit and begin typing. For prices, make sure to
+            press on the
+            <span className="text-gray-300 font-bold"> right side </span> of the
+            field to enter the correct value.
+          </p>)}
         </div>
 
         {/* Show receipt table or loading message */}
