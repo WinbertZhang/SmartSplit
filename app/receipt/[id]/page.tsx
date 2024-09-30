@@ -203,7 +203,8 @@ function SplitPageContent() {
     Object.keys(memberOwedAmounts).forEach((member) => {
       const memberSubtotalShare = memberOwedAmounts[member];
       const memberTaxShare = (memberSubtotalShare / subtotal) * tax;
-      memberOwedWithTax[member] = memberSubtotalShare + memberTaxShare;
+      const memberTipShare = (memberSubtotalShare / subtotal) * tip;
+      memberOwedWithTax[member] = memberSubtotalShare + memberTaxShare + memberTipShare;
     });
 
     // Create the split details array to be saved to Firestore

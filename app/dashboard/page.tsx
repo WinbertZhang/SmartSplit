@@ -47,7 +47,7 @@ export default function Dashboard() {
             <FaReceipt className="text-gray-400 hover:text-white text-6xl mb-4 transition-colors duration-200" />
             <h2 className="text-lg font-semibold">Upload Receipt</h2>
             <p className="text-gray-400 mt-2">
-              Upload your receipt and start splitting with your roommates.
+              Upload your receipt and start splitting with your friends or roommates.
             </p>
           </Link>
 

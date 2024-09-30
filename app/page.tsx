@@ -21,7 +21,7 @@ export default function LandingPage() {
 
           {/* Description */}
           <p className="text-gray-400 text-lg md:text-xl mt-4 md:mt-8">
-          Upload your receipt, and let Smart Split fairly divide the bill with your roommates. No more headaches over who owes what.
+          Upload your receipt, and let Smart Split fairly divide the bill with your friends and roommates. No more headaches over who owes what.
           </p>
 
           {/* Action Button to Upload Receipt */}

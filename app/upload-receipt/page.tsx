@@ -151,7 +151,11 @@ export default function ReceiptPage() {
   };
 
   // Recalculate the subtotal and total based on the items and tax
-  const recalculateTotals = (items: ReceiptItem[], tax: number, tip: number) => {
+  const recalculateTotals = (
+    items: ReceiptItem[],
+    tax: number,
+    tip: number
+  ) => {
     const subtotal = items.reduce((acc, item) => acc + item.price, 0); // Calculate subtotal
     const total = subtotal + tax + tip; // Calculate total by adding tax
     return { subtotal, total };
@@ -259,14 +263,16 @@ export default function ReceiptPage() {
           Upload Receipt
         </h2>
         <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
-          <span className="text-gray-300 font-bold">Automatic Mode: </span> 
-          Upload your receipt, and the app will automatically extract all items and prices. 
-          After a short loading time, you can easily edit and confirm the data.
-          <br /><br />
-          <span className="text-gray-300 font-bold">Manual Mode: </span> 
-          Switch to manual entry to input the items yourself without uploading a receipt image.
+          <span className="text-gray-300 font-bold">Automatic Mode: </span>
+          Upload your receipt, and the app will automatically extract all items
+          and prices. After a short loading time, you can easily edit and
+          confirm the data.
+          <br />
+          <br />
+          <span className="text-gray-300 font-bold">Manual Mode: </span>
+          Switch to manual entry to input the items yourself without uploading a
+          receipt image.
         </p>
-
       </div>
       <div className="max-w-2xl sm:max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
         {!loading && !receiptData && (
@@ -279,7 +285,9 @@ export default function ReceiptPage() {
               >
                 <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
                 <span className="text-md sm:text-lg font-semibold">
-                  Upload Receipt
+                  {manualEntryMode
+                    ? "Upload Receipt for Manual Entry"
+                    : "Upload Receipt for Automatic Processing"}
                 </span>
               </button>
               <input
@@ -325,15 +333,16 @@ export default function ReceiptPage() {
 
           {/* Instructions for editing receipt items */}
           {receiptData && (
-          <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
-            <span className="text-gray-300 font-bold text-lg"> Tip: </span>{" "}
-            <br></br>To edit names and prices, simply{" "}
-            <span className="text-gray-300 font-bold">click</span> on the field
-            you would like to edit and begin typing. For prices, make sure to
-            press on the
-            <span className="text-gray-300 font-bold"> right side </span> of the
-            field to enter the correct value.
-          </p>)}
+            <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
+              <span className="text-gray-300 font-bold text-lg"> Tip: </span>{" "}
+              <br></br>To edit names and prices, simply{" "}
+              <span className="text-gray-300 font-bold">click</span> on the
+              field you would like to edit and begin typing. For prices, make
+              sure to press on the
+              <span className="text-gray-300 font-bold"> right side </span> of
+              the field to enter the correct value.
+            </p>
+          )}
         </div>
 
         {/* Show receipt table or loading message */}
