@@ -294,7 +294,7 @@ export default function ReceiptPage() {
             </div>
           </div>
         )}
-        {!receiptData && (
+        {!imageURL && (
           <div className="flex justify-center mb-6">
             <button
               className={`p-3 rounded-md text-white ${
