@@ -44,22 +44,36 @@ export default function ReceiptPage() {
     setImageURL(URL.createObjectURL(uploadedImage)); // Set local URL for previewing the image
     setLoading(true); // Set loading state to true
 
-    if (!manualEntryMode) {
-      try {
-        const user = auth.currentUser;
-        if (!user) {
-          throw new Error("User not authenticated");
-        }
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
 
-        // Upload the image to Firebase Storage
-        const downloadURL = await uploadImageToFirebaseStorage(
-          uploadedImage,
-          user.uid
-        );
-        if (!downloadURL) {
-          throw new Error("Failed to upload image");
-        }
+      // Upload the image to Firebase Storage
+      const downloadURL = await uploadImageToFirebaseStorage(
+        uploadedImage,
+        user.uid
+      );
+      if (!downloadURL) {
+        throw new Error("Failed to upload image");
+      }
 
+      if (manualEntryMode) {
+        setReceiptData((prevData) => ({
+          ...prevData,
+          receiptUrl: downloadURL,
+          userId: prevData?.userId || auth.currentUser?.uid || "",
+          items: prevData?.items || [],
+          subtotal: prevData?.subtotal || 0,
+          tax: prevData?.tax || 0,
+          tip: prevData?.tip || 0,
+          total: prevData?.total || 0,
+          createdAt: prevData?.createdAt || new Date(),
+          splitDetails: prevData?.splitDetails || [],
+        }));
+        showSuccessToast("Image uploaded successfully!");
+      } else {
         // Process the uploaded receipt image using Gemini API
         const cleanedData = await processReceiptImage(uploadedImage);
 
@@ -102,22 +116,9 @@ export default function ReceiptPage() {
 
         setReceiptData(receiptDataToSave); // Set the receipt data in state
         showSuccessToast("Receipt data processed successfully!"); // Show success toast
-      } catch (error) {
-        showErrorToast("Error processing receipt! Please try again later.");
       }
-    } else {
-      // Skip API processing and go directly to manual entry mode with empty table
-      setReceiptData({
-        items: [],
-        subtotal: 0,
-        tax: 0,
-        tip: 0,
-        total: 0,
-        receiptUrl: "",
-        userId: auth.currentUser?.uid || "",
-        createdAt: new Date(),
-        splitDetails: [],
-      });
+    } catch (error) {
+      showErrorToast("Error processing receipt! Please try again later.");
     }
 
     setLoading(false); // Set loading state to false after processing is complete
@@ -145,9 +146,24 @@ export default function ReceiptPage() {
     return jsonResponse.cleanedJson; // Return the cleaned JSON data
   };
 
-  // Add a manual entry toggle
   const toggleManualEntryMode = () => {
-    setManualEntryMode((prev) => !prev); // Toggle manual entry mode
+    setManualEntryMode((prev) => {
+      const newMode = !prev;
+      if (newMode) {
+        setReceiptData({
+          items: [],
+          subtotal: 0,
+          tax: 0,
+          tip: 0,
+          total: 0,
+          receiptUrl: "",
+          userId: auth.currentUser?.uid || "",
+          createdAt: new Date(),
+          splitDetails: [],
+        });
+      }
+      return newMode;
+    });
   };
 
   // Recalculate the subtotal and total based on the items and tax
@@ -275,9 +291,9 @@ export default function ReceiptPage() {
         </p>
       </div>
       <div className="max-w-2xl sm:max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
-        {!loading && !receiptData && (
+        {!loading && !receiptData && !manualEntryMode && (
           <div className="my-6">
-            {/* Receipt upload button */}
+            {/* Image upload button */}
             <div className="flex justify-center">
               <button
                 className="bg-[#212C40] text-white p-6 sm:p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
@@ -286,23 +302,24 @@ export default function ReceiptPage() {
                 <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
                 <span className="text-md sm:text-lg font-semibold">
                   {manualEntryMode
-                    ? "Upload Receipt for Manual Entry"
-                    : "Upload Receipt for Automatic Processing"}
+                    ? "Optional Receipt Image Upload"
+                    : "Upload Receipt"}
                 </span>
               </button>
               <input
                 id="file-input"
                 type="file"
                 accept="image/"
-                onChange={
-                  (e) => e.target.files && handleImageUpload(e.target.files[0]) // Handle file upload
-                }
+                onChange={(e) =>
+                  e.target.files && handleImageUpload(e.target.files[0])
+                } // Handle file upload
                 className="hidden"
               />
             </div>
           </div>
         )}
-        {!imageURL && (
+
+        {!imageURL && !manualEntryMode && (
           <div className="flex justify-center mb-6">
             <button
               className={`p-3 rounded-md text-white ${
@@ -314,6 +331,32 @@ export default function ReceiptPage() {
                 ? "Switch to Automatic Upload"
                 : "Switch to Manual Entry"}
             </button>
+          </div>
+        )}
+
+        {manualEntryMode && !imageURL && (
+          <div className="my-6">
+            {/* Optional image upload button in manual mode */}
+            <div className="flex justify-center">
+              <button
+                className="bg-[#212C40] text-white p-6 sm:p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
+                onClick={() => document.getElementById("file-input")?.click()} // Trigger the file input dialog
+              >
+                <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
+                <span className="text-md sm:text-lg font-semibold">
+                  Optional Receipt Image Upload
+                </span>
+              </button>
+              <input
+                id="file-input"
+                type="file"
+                accept="image/"
+                onChange={(e) =>
+                  e.target.files && handleImageUpload(e.target.files[0])
+                } // Handle file upload
+                className="hidden"
+              />
+            </div>
           </div>
         )}
 
