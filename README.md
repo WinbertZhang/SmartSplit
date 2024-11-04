@@ -28,17 +28,17 @@ To set up Smart Split locally:
    cd smart-split
    ```
 
-2. Install Dependencies:
+2. **Install Dependencies**:
 
     ```
     npm install
     ```
 
-3. Configure Firebase:
+3. **Configure Firebase**:
 
     Set up a Firebase project and add your Firebase configuration in an .env.local file.
 
-4. Run the Application:
+4. **Run the Application**:
 
     ```
     npm run dev
