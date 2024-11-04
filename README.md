@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Smart Split
 
-## Getting Started
+Smart Split is an innovative receipt expense tracking and splitting application that simplifies expense sharing among users. Built with Next.js, React, TypeScript, Firebase, and Generative AI, it converts receipt images into structured JSON data for automated bill splitting, significantly reducing the need for manual expense tracking.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Automated Receipt Processing**: Upload receipt images, and Smart Split automatically extracts items, prices, and classifications using Generative AI (Google Gemini 1.5 model).
+- **Expense Splitting**: Automatically calculates and splits expenses based on item selection
+- **User Authentication**: Secure sign-in with Firebase Authentication.
+- **Real-Time Updates**: Expenses and updates are synchronized in real-time across users.
+- **Customizable Entry Options**: Users can choose between automatic upload and manual entry for flexibility in adding expenses.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Technology Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Frontend**: Next.js (with app router), React, TypeScript
+- **Backend & Database**: Firebase Authentication, Firebase Realtime Database
+- **AI Processing**: Google Generative AI (Gemini 1.5 model) for receipt item extraction
+- **Hosting**: Vercel for deployment
+- **UI Styling**: Tailwind CSS for responsive design
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Installation
 
-## Learn More
+To set up Smart Split locally:
 
-To learn more about Next.js, take a look at the following resources:
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/WinbertZhang/SmartSplit.git
+   cd smart-split
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Install Dependencies:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+    ```
+    npm install
+    ```
 
-## Deploy on Vercel
+3. Configure Firebase:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    Set up a Firebase project and add your Firebase configuration in an .env.local file.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Run the Application:
+
+    ```
+    npm run dev
+    ```
+
+The app should now be accessible at http://localhost:3000.
+
+## Contributing
+
+Contributions are welcome! If you’re interested in enhancing Smart Split, please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the MIT License.
