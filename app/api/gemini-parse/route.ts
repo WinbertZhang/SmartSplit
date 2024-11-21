@@ -91,11 +91,17 @@ export async function POST(req: NextRequest) {
     const imagePart = fileToGenerativePart(base64Data, mimeType);
 
     // Prompt 1: Ask AI to extract items and prices from the receipt
-    const firstPrompt = "Please return a JSON block with all the items and their prices in this format extracted from the uploaded receipt. Make sure to include discounts and negative numbers.";
+    const firstPrompt = `Please return a JSON block with all the items and their prices in this format extracted from the uploaded receipt. Make sure to include discounts and negative numbers. Use the following format:
+    {
+      "Item Name": "$Price"
+    }
+    `;    
     const firstResult = await model.generateContent([firstPrompt, imagePart]);
 
     // Extract the text from the AI response
     const extractedJson = firstResult.response.text();
+
+    console.log(extractedJson);
 
     // Sanitize and parse the extracted JSON
     const parsedJson = sanitizeJSONResponse(extractedJson);
