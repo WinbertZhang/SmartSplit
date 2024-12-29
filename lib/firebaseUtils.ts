@@ -63,12 +63,12 @@ export const deleteExpenseFromFirestore = async (expenseId: string) => {
 };
 
 // Function to upload an image to Firebase Storage and return the URL
-export async function uploadImageToFirebaseStorage(imageFile: File, userId: string): Promise<string | null> {
+export async function uploadImageToFirebaseStorage(imageFile: File, userId: string): Promise<string> {
   try {
     const storageRef = ref(storage, `receipts/${userId}/${uuidv4()}`);
     await uploadBytes(storageRef, imageFile);
     const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+    return downloadURL; // Always return a string
   } catch (error) {
     console.error("Error uploading image to Firebase Storage:", error);
     throw new Error("Error uploading image to Firebase Storage");

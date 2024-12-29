@@ -1,69 +1,64 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // For navigation within Next.js
-import Image from "next/image"; // Optimized image component from Next.js
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   showSuccessToast,
   showErrorToast,
-} from "@/components/toastNotifications"; // Utility for showing toast notifications
-import ReceiptTable from "@/components/receiptTable"; // Component for displaying receipt items in a table
+} from "@/components/toastNotifications";
+import ReceiptTable from "@/components/receiptTable";
 import {
   uploadImageToFirebaseStorage,
   saveReceiptItemsToFirestore,
-} from "@/lib/firebaseUtils"; // Utility functions for uploading images and saving data to Firestore
-import { ToastContainer } from "react-toastify"; // Toast container for showing notifications
-import "react-toastify/dist/ReactToastify.css"; // Importing Toastify CSS
-import { getAuth, onAuthStateChanged } from "firebase/auth"; // Firebase Auth for managing authentication state
-import { ReceiptData, ReceiptItem } from "@/data/receiptTypes"; // Types for receipt data and items
-import { FaReceipt } from "react-icons/fa"; // Icon for receipt upload button
+} from "@/lib/firebaseUtils";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { ReceiptData, ReceiptItem } from "@/data/receiptTypes";
+import { FaReceipt } from "react-icons/fa";
 
 export default function ReceiptPage() {
-  const [imageURL, setImageURL] = useState<string | null>(null); // State for the image URL
-  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null); // State for storing receipt data
-  const [loading, setLoading] = useState(false); // Loading state for when the receipt is being processed
-  const [manualEntryMode, setManualEntryMode] = useState(false); // Toggle for manual entry mode
-  const router = useRouter(); // Router for navigating between pages
-  const auth = getAuth(); // Get Firebase Auth instance
+  const [imageURL, setImageURL] = useState<string | null>(null);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [manualEntryMode, setManualEntryMode] = useState(false);
+  const [user, setUser] = useState<any>(null); // <-- New local state to hold the user or null
+  const router = useRouter();
+  const auth = getAuth();
 
-  // Check if the user is logged in, otherwise redirect to the login page
+  // Allow optional sign-in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // User is not logged in, redirect to the login page and pass the return URL
-        router.push(`/login?returnUrl=/upload-receipt`);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null); 
+        // We do NOT redirect if user is not logged in – now optional
       }
     });
-
-    // Cleanup subscription on component unmount
     return () => unsubscribe();
-  }, [auth, router]);
+  }, [auth]);
 
-  // Handle the image upload and receipt processing
   const handleImageUpload = async (uploadedImage: File) => {
-    setImageURL(URL.createObjectURL(uploadedImage)); // Set local URL for previewing the image
-    setLoading(true); // Set loading state to true
+    setImageURL(URL.createObjectURL(uploadedImage));
+    setLoading(true);
 
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      // Upload the image to Firebase Storage
-      const downloadURL = await uploadImageToFirebaseStorage(
-        uploadedImage,
-        user.uid
-      );
-      if (!downloadURL) {
-        throw new Error("Failed to upload image");
+      // If logged in, upload the image to Firebase storage
+      let downloadURL = "";
+      if (user && user.uid) {
+        downloadURL = await uploadImageToFirebaseStorage(uploadedImage, user.uid);
+      } else {
+        // Handle the guest mode (when user is null)
+        downloadURL = imageURL || "";
       }
 
       if (manualEntryMode) {
         setReceiptData((prevData) => ({
           ...prevData,
           receiptUrl: downloadURL,
-          userId: prevData?.userId || auth.currentUser?.uid || "",
+          userId: user?.uid || "", // If not logged in, store empty
           items: prevData?.items || [],
           subtotal: prevData?.subtotal || 0,
           tax: prevData?.tax || 0,
@@ -74,34 +69,30 @@ export default function ReceiptPage() {
         }));
         showSuccessToast("Image uploaded successfully!");
       } else {
-        // Process the uploaded receipt image using Gemini API
+        // Automatic receipt processing via Gemini
         const cleanedData = await processReceiptImage(uploadedImage);
 
-        // Extract Subtotal, Tax, and Total from the cleaned data
+        // For demonstration, set these to 0 or parse them from cleanedData if needed
         const subtotal = 0;
         const tax = 0;
         const tip = 0;
         const total = 0;
+        const createdAt = new Date();
 
-        const createdAt = new Date(); // Set the current date and time
-
-        // Filter out non-item keys like "Subtotal", "Tax", and "Total" from the cleaned data
+        // Filter out known keys
         const filteredData = Object.entries(cleanedData).filter(
           ([key]) => !["Subtotal", "Tax", "Total"].includes(key)
         );
 
-        // Convert the cleaned data into an array of receipt items
         const itemsArray: ReceiptItem[] = filteredData.map(
           ([itemName, itemPrice], index) => ({
             id: index + 1,
             item: itemName,
-            price:
-              parseFloat((itemPrice as string).replace(/[^\d.]/g, "")) || 0,
+            price: parseFloat((itemPrice as string).replace(/[^\d.]/g, "")) || 0,
             splitters: [],
           })
         );
 
-        // Create the receipt data object to save to Firestore
         const receiptDataToSave: ReceiptData = {
           items: itemsArray,
           subtotal,
@@ -109,41 +100,36 @@ export default function ReceiptPage() {
           tip,
           total,
           receiptUrl: downloadURL,
-          userId: user.uid,
+          userId: user?.uid || "", // If not logged in, store empty
           createdAt,
           splitDetails: [],
         };
-
-        setReceiptData(receiptDataToSave); // Set the receipt data in state
-        showSuccessToast("Receipt data processed successfully!"); // Show success toast
+        setReceiptData(receiptDataToSave);
+        showSuccessToast("Receipt data processed successfully!");
       }
     } catch (error) {
       showErrorToast("Error processing receipt! Please try again later.");
+      console.error(error);
     }
-
-    setLoading(false); // Set loading state to false after processing is complete
+    setLoading(false);
   };
 
-  // Process the receipt image using the backend Gemini API for parsing
+  // Process the receipt image using the backend Gemini API
   const processReceiptImage = async (uploadedImage: File) => {
     const formData = new FormData();
-    formData.append("image", uploadedImage); // Append the image file to form data
-    formData.append(
-      "prompt",
-      'Please return a JSON block with all the items and their prices in this format: { "ItemName": "$Price" }'
-    );
+    formData.append("image", uploadedImage);
 
     const res = await fetch("/api/gemini-parse", {
       method: "POST",
-      body: formData, // Send the form data to the backend API
+      body: formData,
     });
 
     if (!res.ok) {
       throw new Error("Failed to process receipt");
     }
 
-    const jsonResponse = await res.json(); // Parse the JSON response
-    return jsonResponse.cleanedJson; // Return the cleaned JSON data
+    const jsonResponse = await res.json();
+    return jsonResponse.cleanedJson;
   };
 
   const toggleManualEntryMode = () => {
@@ -157,7 +143,7 @@ export default function ReceiptPage() {
           tip: 0,
           total: 0,
           receiptUrl: "",
-          userId: auth.currentUser?.uid || "",
+          userId: user?.uid || "",
           createdAt: new Date(),
           splitDetails: [],
         });
@@ -166,14 +152,14 @@ export default function ReceiptPage() {
     });
   };
 
-  // Recalculate the subtotal and total based on the items and tax
+  // Recalculate the subtotal and total based on the items, tax, and tip
   const recalculateTotals = (
     items: ReceiptItem[],
     tax: number,
     tip: number
   ) => {
-    const subtotal = items.reduce((acc, item) => acc + item.price, 0); // Calculate subtotal
-    const total = subtotal + tax + tip; // Calculate total by adding tax
+    const subtotal = items.reduce((acc, item) => acc + item.price, 0);
+    const total = subtotal + tax + tip;
     return { subtotal, total };
   };
 
@@ -191,13 +177,15 @@ export default function ReceiptPage() {
   ) => {
     if (receiptData) {
       if (id === 0) {
+        // Editing tax or tip
         const { subtotal, total } = recalculateTotals(
           receiptData.items,
-          updatedItem.tax || receiptData.tax,
-          updatedItem.tip || receiptData.tip
+          updatedItem.tax ?? receiptData.tax,
+          updatedItem.tip ?? receiptData.tip
         );
-        setReceiptData({ ...receiptData, ...updatedItem, subtotal, total }); // Update the receipt data
+        setReceiptData({ ...receiptData, ...updatedItem, subtotal, total });
       } else {
+        // Editing a line item
         const updatedItems = receiptData.items.map((item) =>
           item.id === id ? { ...item, ...updatedItem } : item
         );
@@ -216,59 +204,64 @@ export default function ReceiptPage() {
     }
   };
 
-  // Remove an item from the receipt
+  // Remove an item
   const removeItem = (id: number) => {
     if (receiptData) {
-      const updatedItems = receiptData.items.filter((item) => item.id !== id); // Filter out the removed item
+      const updatedItems = receiptData.items.filter((item) => item.id !== id);
       const { subtotal, total } = recalculateTotals(
         updatedItems,
         receiptData.tax,
         receiptData.tip
       );
-      setReceiptData({ ...receiptData, items: updatedItems, subtotal, total }); // Update the receipt data
+      setReceiptData({ ...receiptData, items: updatedItems, subtotal, total });
     }
   };
 
-  // Add a new item to the receipt
+  // Add a new item
   const addNewItem = (newItem: ReceiptItem) => {
     if (receiptData) {
-      const updatedItems = [...receiptData.items, newItem]; // Add the new item to the list
+      const updatedItems = [...receiptData.items, newItem];
       const { subtotal, total } = recalculateTotals(
         updatedItems,
         receiptData.tax,
         receiptData.tip
       );
-      setReceiptData({ ...receiptData, items: updatedItems, subtotal, total }); // Update the receipt data
+      setReceiptData({ ...receiptData, items: updatedItems, subtotal, total });
     }
   };
 
-  // Handle confirmation and save the receipt data to Firestore
+  // Confirm and Split
   const handleConfirm = async () => {
-    if (receiptData) {
+    if (!receiptData) return;
+
+    const { subtotal, total } = recalculateTotals(
+      receiptData.items,
+      receiptData.tax || 0,
+      receiptData.tip || 0
+    );
+    const updatedReceiptData = { ...receiptData, subtotal, total };
+
+    // If the user is logged in, save to Firestore
+    if (user) {
       try {
-        const { subtotal, total } = recalculateTotals(
-          receiptData.items,
-          receiptData.tax || 0,
-          receiptData.tip || 0
-        );
-        const updatedReceiptData = { ...receiptData, subtotal, total }; // Update the receipt data
-
-        const user = auth.currentUser;
-        if (!user) {
-          throw new Error("User not authenticated");
-        }
-
-        // Save receipt items to Firestore
         const receiptId = await saveReceiptItemsToFirestore(
           user.uid,
           updatedReceiptData
         );
-        setImageURL(imageURL); // Set the image URL
-        router.push(`/receipt/${receiptId}`); // Navigate to the receipt details page
+        setImageURL(imageURL);
+        router.push(`/receipt/${receiptId}`);
       } catch (error) {
         console.error("Error saving receipt:", error);
-        showErrorToast("Error saving receipt data!"); // Show error toast on failure
+        showErrorToast("Error saving receipt data!");
       }
+    } else {
+      // If not logged in, skip Firestore. Just let them see the splits in a “guest” route.
+      // For example, we can push them to a “guest” summary page or store ephemeral data in localStorage:
+      localStorage.setItem("guestReceiptData", JSON.stringify(updatedReceiptData));
+      showSuccessToast("Receipt data stored locally. Proceeding to splits...");
+      // Push to a “guest” or ephemeral route:
+      router.push("/receipt/guest"); 
+      // Alternatively, you could show a local summary with no navigation.
     }
   };
 
@@ -287,17 +280,23 @@ export default function ReceiptPage() {
           <br />
           <span className="text-gray-300 font-bold">Manual Mode: </span>
           Switch to manual entry to input the items yourself without uploading a
-          receipt image.
+          receipt image. 
+          <br />
+          <br />
+          <span className="text-sm text-gray-500">
+            {user
+              ? "You are logged in. Your data will be saved to Firestore."
+              : "You are in guest mode. Your data will only be saved locally."}
+          </span>
         </p>
       </div>
       <div className="max-w-2xl sm:max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
         {!loading && !receiptData && !manualEntryMode && (
           <div className="my-6">
-            {/* Image upload button */}
             <div className="flex justify-center">
               <button
                 className="bg-[#212C40] text-white p-6 sm:p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
-                onClick={() => document.getElementById("file-input")?.click()} // Trigger the file input dialog
+                onClick={() => document.getElementById("file-input")?.click()}
               >
                 <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
                 <span className="text-md sm:text-lg font-semibold">
@@ -312,14 +311,14 @@ export default function ReceiptPage() {
                 accept="image/"
                 onChange={(e) =>
                   e.target.files && handleImageUpload(e.target.files[0])
-                } // Handle file upload
+                }
                 className="hidden"
               />
             </div>
           </div>
         )}
 
-        {!imageURL && !manualEntryMode && (
+        {!imageURL && (
           <div className="flex justify-center mb-6">
             <button
               className={`p-3 rounded-md text-white ${
@@ -336,11 +335,10 @@ export default function ReceiptPage() {
 
         {manualEntryMode && !imageURL && (
           <div className="my-6">
-            {/* Optional image upload button in manual mode */}
             <div className="flex justify-center">
               <button
                 className="bg-[#212C40] text-white p-6 sm:p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
-                onClick={() => document.getElementById("file-input")?.click()} // Trigger the file input dialog
+                onClick={() => document.getElementById("file-input")?.click()}
               >
                 <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
                 <span className="text-md sm:text-lg font-semibold">
@@ -353,47 +351,40 @@ export default function ReceiptPage() {
                 accept="image/"
                 onChange={(e) =>
                   e.target.files && handleImageUpload(e.target.files[0])
-                } // Handle file upload
+                }
                 className="hidden"
               />
             </div>
           </div>
         )}
 
-        {/* Display uploaded image */}
-        <div className="my-6">
-          {imageURL && (
-            <div className="my-6">
-              <Image
-                src={imageURL}
-                alt="Uploaded Receipt"
-                width={400}
-                height={400}
-                className="rounded-lg mx-auto"
-              />
-            </div>
-          )}
+        {imageURL && (
+          <div className="my-6">
+            <Image
+              src={imageURL}
+              alt="Uploaded Receipt"
+              width={400}
+              height={400}
+              className="rounded-lg mx-auto"
+            />
+          </div>
+        )}
 
-          {/* Instructions for editing receipt items */}
-          {receiptData && (
-            <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
-              <span className="text-gray-300 font-bold text-lg"> Tip: </span>{" "}
-              <br></br>To edit names and prices, simply{" "}
-              <span className="text-gray-300 font-bold">click</span> on the
-              field you would like to edit and begin typing. For prices, make
-              sure to press on the
-              <span className="text-gray-300 font-bold"> right side </span> of
-              the field to enter the correct value.
-            </p>
-          )}
-        </div>
+        {receiptData && (
+          <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
+            <span className="text-gray-300 font-bold text-lg"> Tip: </span>{" "}
+            <br />
+            To edit names and prices, simply{" "}
+            <span className="text-gray-300 font-bold">click</span> on the field
+            you would like to edit and begin typing. For prices, make sure to
+            press on the <span className="text-gray-300 font-bold">right side</span> 
+            of the field to enter the correct value.
+          </p>
+        )}
 
-        {/* Show receipt table or loading message */}
-        <div className="">
+        <div>
           {loading ? (
-            <p className="text-gray-400">
-              Processing your receipt. Please wait...
-            </p>
+            <p className="text-gray-400">Processing your receipt. Please wait...</p>
           ) : (
             receiptData && (
               <ReceiptTable
@@ -410,7 +401,6 @@ export default function ReceiptPage() {
           )}
         </div>
 
-        {/* Confirm and Split button */}
         {!loading && receiptData && (
           <div className="p-6">
             <button
@@ -422,8 +412,6 @@ export default function ReceiptPage() {
           </div>
         )}
       </div>
-
-      {/* Toast container for notifications */}
       <ToastContainer />
     </div>
   );
