@@ -13,7 +13,7 @@ if (!apiKey) {
 // Initialize the Google Generative AI client with the appropriate model configuration
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ 
-  model: 'gemini-1.5-flash', 
+  model: 'gemini-2.0-flash-exp', 
   generationConfig: { responseMimeType: "application/json" } 
 });
 
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     // Extract the text from the AI response
     const extractedJson = firstResult.response.text();
 
-    console.log(extractedJson);
+    console.log("first json: ", extractedJson);
 
     // Sanitize and parse the extracted JSON
     const parsedJson = sanitizeJSONResponse(extractedJson);
@@ -131,6 +131,8 @@ export async function POST(req: NextRequest) {
 
     // Remove any items that appear after the 'total' field
     const sanitizedCleanedNoTotalJson = removeItemsAfterTotal(sanitizedCleanedJson);
+
+    console.log("cleaned json: ", sanitizedCleanedNoTotalJson);
 
     // Return the cleaned and sanitized JSON in the response
     return NextResponse.json({ cleanedJson: sanitizedCleanedNoTotalJson }, { status: 200 });

@@ -33,7 +33,7 @@ export default function ReceiptPage() {
       if (currentUser) {
         setUser(currentUser);
       } else {
-        setUser(null); 
+        setUser(null);
         // We do NOT redirect if user is not logged in – now optional
       }
     });
@@ -45,76 +45,43 @@ export default function ReceiptPage() {
     setLoading(true);
 
     try {
-      // If logged in, upload the image to Firebase storage
       let downloadURL = "";
+
       if (user && user.uid) {
-        downloadURL = await uploadImageToFirebaseStorage(uploadedImage, user.uid);
+        downloadURL = await uploadImageToFirebaseStorage(
+          uploadedImage,
+          user.uid
+        );
       } else {
-        // Handle the guest mode (when user is null)
         downloadURL = imageURL || "";
       }
 
-      if (manualEntryMode) {
-        setReceiptData((prevData) => ({
-          ...prevData,
-          receiptUrl: downloadURL,
-          userId: user?.uid || "", // If not logged in, store empty
-          items: prevData?.items || [],
-          subtotal: prevData?.subtotal || 0,
-          tax: prevData?.tax || 0,
-          tip: prevData?.tip || 0,
-          total: prevData?.total || 0,
-          createdAt: prevData?.createdAt || new Date(),
-          splitDetails: prevData?.splitDetails || [],
-        }));
-        showSuccessToast("Image uploaded successfully!");
-      } else {
-        // Automatic receipt processing via Gemini
-        const cleanedData = await processReceiptImage(uploadedImage);
+      const itemsArray = await processReceiptImage(uploadedImage);
 
-        // For demonstration, set these to 0 or parse them from cleanedData if needed
-        const subtotal = 0;
-        const tax = 0;
-        const tip = 0;
-        const total = 0;
-        const createdAt = new Date();
+      const { subtotal, total } = recalculateTotals(itemsArray, 0, 0);
 
-        // Filter out known keys
-        const filteredData = Object.entries(cleanedData).filter(
-          ([key]) => !["Subtotal", "Tax", "Total"].includes(key)
-        );
+      const receiptDataToSave: ReceiptData = {
+        items: itemsArray,
+        subtotal,
+        tax: 0,
+        tip: 0,
+        total,
+        receiptUrl: downloadURL,
+        userId: user?.uid || "",
+        createdAt: new Date(),
+        splitDetails: [],
+      };
 
-        const itemsArray: ReceiptItem[] = filteredData.map(
-          ([itemName, itemPrice], index) => ({
-            id: index + 1,
-            item: itemName,
-            price: parseFloat((itemPrice as string).replace(/[^\d.]/g, "")) || 0,
-            splitters: [],
-          })
-        );
-
-        const receiptDataToSave: ReceiptData = {
-          items: itemsArray,
-          subtotal,
-          tax,
-          tip,
-          total,
-          receiptUrl: downloadURL,
-          userId: user?.uid || "", // If not logged in, store empty
-          createdAt,
-          splitDetails: [],
-        };
-        setReceiptData(receiptDataToSave);
-        showSuccessToast("Receipt data processed successfully!");
-      }
+      setReceiptData(receiptDataToSave);
+      showSuccessToast("Receipt data processed successfully!");
     } catch (error) {
       showErrorToast("Error processing receipt! Please try again later.");
       console.error(error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // Process the receipt image using the backend Gemini API
   const processReceiptImage = async (uploadedImage: File) => {
     const formData = new FormData();
     formData.append("image", uploadedImage);
@@ -129,7 +96,26 @@ export default function ReceiptPage() {
     }
 
     const jsonResponse = await res.json();
-    return jsonResponse.cleanedJson;
+    const cleanedJson = jsonResponse.cleanedJson;
+
+    // Map cleaned JSON into ReceiptItem format
+    const itemsArray: ReceiptItem[] = cleanedJson.map((item: { [s: string]: unknown; } | ArrayLike<unknown>, index: number) => {
+      const itemName = Object.keys(item)[0];
+      const itemPrice = Object.values(item)[0];
+      const price =
+        typeof itemPrice === "string"
+          ? parseFloat(itemPrice.replace(/[^\d.-]/g, ""))
+          : Number(itemPrice);
+
+      return {
+        id: index + 1,
+        item: itemName,
+        price: price || 0,
+        splitters: [],
+      };
+    });
+
+    return itemsArray;
   };
 
   const toggleManualEntryMode = () => {
@@ -257,10 +243,13 @@ export default function ReceiptPage() {
     } else {
       // If not logged in, skip Firestore. Just let them see the splits in a “guest” route.
       // For example, we can push them to a “guest” summary page or store ephemeral data in localStorage:
-      localStorage.setItem("guestReceiptData", JSON.stringify(updatedReceiptData));
+      localStorage.setItem(
+        "guestReceiptData",
+        JSON.stringify(updatedReceiptData)
+      );
       showSuccessToast("Receipt data stored locally. Proceeding to splits...");
       // Push to a “guest” or ephemeral route:
-      router.push("/receipt/guest"); 
+      router.push("/receipt/guest");
       // Alternatively, you could show a local summary with no navigation.
     }
   };
@@ -280,7 +269,7 @@ export default function ReceiptPage() {
           <br />
           <span className="text-gray-300 font-bold">Manual Mode: </span>
           Switch to manual entry to input the items yourself without uploading a
-          receipt image. 
+          receipt image.
           <br />
           <br />
           <span className="text-sm text-gray-500">
@@ -377,14 +366,17 @@ export default function ReceiptPage() {
             To edit names and prices, simply{" "}
             <span className="text-gray-300 font-bold">click</span> on the field
             you would like to edit and begin typing. For prices, make sure to
-            press on the <span className="text-gray-300 font-bold">right side</span> 
+            press on the{" "}
+            <span className="text-gray-300 font-bold">right side</span>
             of the field to enter the correct value.
           </p>
         )}
 
         <div>
           {loading ? (
-            <p className="text-gray-400">Processing your receipt. Please wait...</p>
+            <p className="text-gray-400">
+              Processing your receipt. Please wait...
+            </p>
           ) : (
             receiptData && (
               <ReceiptTable
