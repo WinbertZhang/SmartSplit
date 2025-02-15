@@ -85,36 +85,63 @@ export default function ReceiptPage() {
   const processReceiptImage = async (uploadedImage: File) => {
     const formData = new FormData();
     formData.append("image", uploadedImage);
-
+  
     const res = await fetch("/api/gemini-parse", {
       method: "POST",
       body: formData,
     });
-
+  
     if (!res.ok) {
       throw new Error("Failed to process receipt");
     }
-
+  
     const jsonResponse = await res.json();
     const cleanedJson = jsonResponse.cleanedJson;
-
-    // Map cleaned JSON into ReceiptItem format
-    const itemsArray: ReceiptItem[] = cleanedJson.map((item: { [s: string]: unknown; } | ArrayLike<unknown>, index: number) => {
-      const itemName = Object.keys(item)[0];
-      const itemPrice = Object.values(item)[0];
-      const price =
-        typeof itemPrice === "string"
-          ? parseFloat(itemPrice.replace(/[^\d.-]/g, ""))
-          : Number(itemPrice);
-
-      return {
-        id: index + 1,
-        item: itemName,
-        price: price || 0,
-        splitters: [],
-      };
-    });
-
+  
+    let itemsArray: ReceiptItem[] = [];
+  
+    if (Array.isArray(cleanedJson)) {
+      // cleanedJson is already an array; map it directly.
+      itemsArray = cleanedJson
+        .map((item: any, index: number) => {
+          if (typeof item === "object" && item !== null) {
+            const keys = Object.keys(item);
+            if (keys.length > 0) {
+              const itemName = keys[0];
+              const itemPrice = item[itemName];
+              const price =
+                typeof itemPrice === "string"
+                  ? parseFloat(itemPrice.replace(/[^\d.-]/g, ""))
+                  : Number(itemPrice);
+              return {
+                id: index + 1,
+                item: itemName,
+                price: price || 0,
+                splitters: [],
+              };
+            }
+          }
+          return null;
+        })
+        .filter((el) => el !== null);
+    } else if (typeof cleanedJson === "object" && cleanedJson !== null) {
+      // cleanedJson is an object; convert it into an array.
+      itemsArray = Object.entries(cleanedJson).map(([itemName, itemPrice], index) => {
+        const price =
+          typeof itemPrice === "string"
+            ? parseFloat(itemPrice.replace(/[^\d.-]/g, ""))
+            : Number(itemPrice);
+        return {
+          id: index + 1,
+          item: itemName,
+          price: price || 0,
+          splitters: [],
+        };
+      });
+    } else {
+      throw new Error("Invalid cleaned JSON format");
+    }
+  
     return itemsArray;
   };
 

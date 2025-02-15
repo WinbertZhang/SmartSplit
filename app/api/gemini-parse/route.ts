@@ -90,53 +90,36 @@ export async function POST(req: NextRequest) {
     // Prepare the image data to be used by Generative AI
     const imagePart = fileToGenerativePart(base64Data, mimeType);
 
-    // Prompt 1: Ask AI to extract items and prices from the receipt
-    const firstPrompt = `Please return a JSON block with all the items and their prices in this format extracted from the uploaded receipt. Make sure to include discounts and negative numbers. Use the following format:
-    {
-      "Item Name": "$Price"
-    }
-    `;    
-    const firstResult = await model.generateContent([firstPrompt, imagePart]);
+    // Combined prompt: extract items and prices in valid JSON format
+    const combinedPrompt = `Extract all receipt items and their prices from the receipt image. Return a valid JSON object in the following format:
+{
+  "Item Name": "$Price"
+}
+Ensure that:
+- All keys are human readable.
+- Prices with discount codes (e.g., (-A)) are returned as negative numbers.
+- If a "total" field is present, do not include any items beyond it.
+Only output the JSON and nothing else.`;
+
+    // Send a single request to Gemini using the combined prompt and the image data
+    const result = await model.generateContent([combinedPrompt, imagePart]);
 
     // Extract the text from the AI response
-    const extractedJson = firstResult.response.text();
-
-    console.log("first json: ", extractedJson);
+    const extractedJson = result.response.text();
+    console.log("extracted json:", extractedJson);
 
     // Sanitize and parse the extracted JSON
     const parsedJson = sanitizeJSONResponse(extractedJson);
     if (!parsedJson) {
-      return NextResponse.json({ error: 'Failed to extract valid JSON from the first prompt.' }, { status: 500 });
-    }
-
-    // Prompt 2: Clean up the extracted JSON for better readability
-    const secondPrompt = `Here is a json output from OCR extracted key values from a receipt. Please clean up all the keys and values based on these rules:
-    {
-      "Item Name": "$Price"
-    }
-    - All keys should be human readable (e.g. Bounty Paper Towels)
-    - Values with a discount code such as (-A) should be returned as negative price value
-    
-    ${JSON.stringify(parsedJson)}`;
-
-    // Generate the cleaned output from AI
-    const secondResult = await model.generateContent([secondPrompt]);
-    const cleanedJson = secondResult.response.text();
-
-    // Sanitize and parse the cleaned JSON
-    const sanitizedCleanedJson = sanitizeJSONResponse(cleanedJson);
-    if (!sanitizedCleanedJson) {
-      return NextResponse.json({ error: 'Failed to parse cleaned JSON.' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to extract valid JSON.' }, { status: 500 });
     }
 
     // Remove any items that appear after the 'total' field
-    const sanitizedCleanedNoTotalJson = removeItemsAfterTotal(sanitizedCleanedJson);
-
-    console.log("cleaned json: ", sanitizedCleanedNoTotalJson);
+    const sanitizedJson = removeItemsAfterTotal(parsedJson);
+    console.log("sanitized json:", sanitizedJson);
 
     // Return the cleaned and sanitized JSON in the response
-    return NextResponse.json({ cleanedJson: sanitizedCleanedNoTotalJson }, { status: 200 });
-
+    return NextResponse.json({ cleanedJson: sanitizedJson }, { status: 200 });
   } catch (error) {
     // Return a 500 error if there is a failure during processing
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
