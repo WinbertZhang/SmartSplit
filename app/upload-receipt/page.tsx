@@ -282,7 +282,7 @@ export default function ReceiptPage() {
   };
 
   return (
-    <div className="items-center z-10 mt-20 pt-20">
+    <div className="items-center z-10 pt-24 min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <div className="text-center max-w-lg mx-auto">
         <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2">
           Upload Receipt
@@ -306,19 +306,21 @@ export default function ReceiptPage() {
           </span>
         </p>
       </div>
-      <div className="max-w-2xl sm:max-w-4xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center">
+      <div className="max-w-2xl sm:max-w-4xl mx-auto bg-white/10 backdrop-blur-lg p-8 rounded-xl shadow-lg border border-white/20">
         {!loading && !receiptData && !manualEntryMode && (
           <div className="my-6">
             <div className="flex justify-center">
               <button
-                className="bg-[#212C40] text-white p-6 sm:p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
+                className="group relative bg-white/10 backdrop-blur-lg text-white p-8 sm:p-10 rounded-2xl shadow-2xl text-center hover:bg-white/20 transition-all duration-300 flex flex-col items-center justify-center border-2 border-dashed border-white/30 hover:border-purple-400/50 min-w-[280px]"
                 onClick={() => document.getElementById("file-input")?.click()}
               >
-                <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
-                <span className="text-md sm:text-lg font-semibold">
-                  {manualEntryMode
-                    ? "Optional Receipt Image Upload"
-                    : "Upload Receipt"}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <FaReceipt className="relative z-10 text-white/70 group-hover:text-white text-4xl sm:text-6xl mb-4 transition-all duration-300 group-hover:scale-110" />
+                <span className="relative z-10 text-lg sm:text-xl font-semibold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                  Upload Receipt
+                </span>
+                <span className="relative z-10 text-sm text-white/60 mt-2">
+                  Click or drag to upload
                 </span>
               </button>
               <input
@@ -337,14 +339,23 @@ export default function ReceiptPage() {
         {!imageURL && (
           <div className="flex justify-center mb-6">
             <button
-              className={`p-3 rounded-md text-white ${
-                manualEntryMode ? "bg-green-500" : "bg-blue-500"
+              className={`group relative px-6 py-3 rounded-xl text-white font-medium transition-all duration-300 border ${
+                manualEntryMode 
+                  ? "bg-green-500/20 border-green-400/50 hover:bg-green-500/30 hover:border-green-400" 
+                  : "bg-blue-500/20 border-blue-400/50 hover:bg-blue-500/30 hover:border-blue-400"
               }`}
               onClick={toggleManualEntryMode}
             >
-              {manualEntryMode
-                ? "Switch to Automatic Upload"
-                : "Switch to Manual Entry"}
+              <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+                manualEntryMode 
+                  ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20" 
+                  : "bg-gradient-to-r from-blue-500/20 to-cyan-500/20"
+              }`}></div>
+              <span className="relative z-10">
+                {manualEntryMode
+                  ? "Switch to Automatic Upload"
+                  : "Switch to Manual Entry"}
+              </span>
             </button>
           </div>
         )}
@@ -353,12 +364,16 @@ export default function ReceiptPage() {
           <div className="my-6">
             <div className="flex justify-center">
               <button
-                className="bg-[#212C40] text-white p-6 sm:p-6 rounded-xl shadow-xl text-center hover:bg-[#1A2535] transition-colors flex flex-col items-center justify-center border-2 border-dashed border-gray-400"
+                className="group relative bg-white/10 backdrop-blur-lg text-white p-8 sm:p-10 rounded-2xl shadow-2xl text-center hover:bg-white/20 transition-all duration-300 flex flex-col items-center justify-center border-2 border-dashed border-white/30 hover:border-blue-400/50 min-w-[280px]"
                 onClick={() => document.getElementById("file-input")?.click()}
               >
-                <FaReceipt className="text-gray-400 hover:text-white text-4xl sm:text-6xl mb-4 transition-colors duration-200" />
-                <span className="text-md sm:text-lg font-semibold">
-                  Optional Receipt Image Upload
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <FaReceipt className="relative z-10 text-white/70 group-hover:text-white text-4xl sm:text-6xl mb-4 transition-all duration-300 group-hover:scale-110" />
+                <span className="relative z-10 text-lg sm:text-xl font-semibold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                  Optional Receipt Upload
+                </span>
+                <span className="relative z-10 text-sm text-white/60 mt-2">
+                  Add image for reference
                 </span>
               </button>
               <input
@@ -375,28 +390,35 @@ export default function ReceiptPage() {
         )}
 
         {imageURL && (
-          <div className="my-6">
-            <Image
-              src={imageURL}
-              alt="Uploaded Receipt"
-              width={400}
-              height={400}
-              className="rounded-lg mx-auto"
-            />
+          <div className="my-8">
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10 max-w-md mx-auto">
+              <h3 className="text-white text-lg font-semibold mb-4 text-center">Uploaded Receipt</h3>
+              <Image
+                src={imageURL}
+                alt="Uploaded Receipt"
+                width={400}
+                height={400}
+                className="rounded-xl mx-auto shadow-lg border border-white/20"
+              />
+            </div>
           </div>
         )}
 
         {receiptData && (
-          <p className="text-md text-gray-400 px-4 py-2 max-w-lg mx-auto">
-            <span className="text-gray-300 font-bold text-lg"> Tip: </span>{" "}
-            <br />
-            To edit names and prices, simply{" "}
-            <span className="text-gray-300 font-bold">click</span> on the field
-            you would like to edit and begin typing. For prices, make sure to
-            press on the{" "}
-            <span className="text-gray-300 font-bold">right side</span>
-            of the field to enter the correct value.
-          </p>
+          <div className="bg-blue-500/10 backdrop-blur-sm rounded-xl p-6 border border-blue-400/20 max-w-lg mx-auto mb-6">
+            <div className="flex items-start space-x-3">
+              <div className="bg-blue-500/20 rounded-full p-2 mt-1">
+                <span className="text-blue-400 text-lg">💡</span>
+              </div>
+              <div>
+                <h4 className="text-blue-400 font-semibold mb-2">Editing Tip</h4>
+                <p className="text-white/80 text-sm leading-relaxed">
+                  To edit names and prices, simply <span className="text-white font-medium">click</span> on any field and start typing. 
+                  For prices, click on the <span className="text-white font-medium">right side</span> of the field to edit the value correctly.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
 
         <div>

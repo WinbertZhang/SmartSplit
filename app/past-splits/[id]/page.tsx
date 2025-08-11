@@ -118,7 +118,7 @@ export default function PastSplitsView() {
   // Display message if the split is not finalized
   if (!splitFinalized) {
     return (
-      <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-24 mb-4">
+      <div className="max-w-6xl mx-auto bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg text-center mt-24 mb-4 border border-white/20">
         <h2 className="text-white text-2xl font-bold mb-6">Split Details Not Finalized</h2>
         <p className="text-gray-400 mb-6">
           It looks like the split details for this receipt have not been finalized yet.
@@ -134,7 +134,7 @@ export default function PastSplitsView() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-24 mb-4">
+    <div className="max-w-6xl mx-auto bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg text-center mt-24 mb-4 border border-white/20">
       <h2 className="text-white text-4xl font-bold mb-6">Receipt Summary</h2>
       <button
           onClick={() => router.push(`/receipt/${receiptId}`)} // Navigate to the split page

@@ -243,92 +243,188 @@ function SplitPageContent() {
   };
 
   if (loading) {
-    return <p>Loading receipt data...</p>;
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto"></div>
+          <p className="text-white text-lg">Loading receipt data...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="max-w-md mx-auto bg-red-500/10 border border-red-500/20 rounded-2xl p-8 text-center">
+          <div className="text-red-400 text-4xl mb-4">❌</div>
+          <h2 className="text-white text-xl font-bold mb-2">Error</h2>
+          <p className="text-red-300">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto bg-[#212C40] p-6 rounded-lg shadow-md text-center mt-20 mb-4">
-      <h2 className="text-white text-2xl font-bold mb-6">Receipt Splitter</h2>
-
-      {receiptUrl && (
-        <div className="my-6 grid justify-center">
-          <Image src={receiptUrl} alt="Uploaded Receipt" width={400} height={400} />
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 pt-24 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            Split Your <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Receipt</span>
+          </h1>
+          <p className="text-white/80">Assign items to group members and calculate fair splits</p>
         </div>
-      )}
 
-      {receiptItems.length > 0 ? (
-        <>
-          <SplitTable
-            receiptItems={receiptItems}
-            groupMembers={groupMembers}
-            onToggleSplit={handleToggleSplit}
-            splitData={splitData}
-            onRemoveMember={handleRemoveMember}
-            onRenameMember={handleRenameMember}
-            onFinalizeDisabledChange={setFinalizeDisabled}
-            subtotal={subtotal}
-            tax={tax}
-            tip={tip}
-            total={total}
-          />
+        <div className="grid gap-8">
+          
+          {/* Receipt Image - Top on mobile, left on desktop */}
+          {receiptUrl && (
+            <div className="lg:hidden">
+              <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                <h3 className="text-white text-lg font-semibold mb-4 text-center">Receipt</h3>
+                <div className="relative max-w-sm mx-auto">
+                  <Image 
+                    src={receiptUrl} 
+                    alt="Uploaded Receipt" 
+                    width={400} 
+                    height={600}
+                    className="w-full h-auto rounded-xl shadow-lg border border-white/10"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
-          <div className="my-6 flex justify-center items-center">
-            <input
-              type="text"
-              placeholder="Add new group member"
-              className="bg-transparent text-lg text-white border-b border-gray-400 focus:outline-none mr-2"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  const newMember = (e.target as HTMLInputElement).value.trim();
-                  if (newMember) {
-                    handleAddMember(newMember);
-                    (e.target as HTMLInputElement).value = "";
-                  }
-                }
-              }}
-              id="new-member-input"
-            />
-            <button
-              onClick={() => {
-                const input = document.getElementById("new-member-input") as HTMLInputElement;
-                const newMember = input.value.trim();
-                if (newMember) {
-                  handleAddMember(newMember);
-                  input.value = "";
-                }
-              }}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-            >
-              Add
-            </button>
+          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+            
+            {/* Receipt Image - Desktop only */}
+            {receiptUrl && (
+              <div className="hidden lg:block lg:col-span-1">
+                <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/20 sticky top-8">
+                  <h3 className="text-white text-lg font-semibold mb-4 text-center">Receipt</h3>
+                  <div className="relative">
+                    <Image 
+                      src={receiptUrl} 
+                      alt="Uploaded Receipt" 
+                      width={400} 
+                      height={600}
+                      className="w-full h-auto rounded-xl shadow-lg border border-white/10"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Main Content */}
+            <div className={`${receiptUrl ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+              
+              {receiptItems.length > 0 ? (
+                <div className="space-y-6">
+                  
+                  {/* Split Table Container */}
+                  <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                    <SplitTable
+                      receiptItems={receiptItems}
+                      groupMembers={groupMembers}
+                      onToggleSplit={handleToggleSplit}
+                      splitData={splitData}
+                      onRemoveMember={handleRemoveMember}
+                      onRenameMember={handleRenameMember}
+                      onFinalizeDisabledChange={setFinalizeDisabled}
+                      subtotal={subtotal}
+                      tax={tax}
+                      tip={tip}
+                      total={total}
+                    />
+                  </div>
+
+                  {/* Add Member Section */}
+                  <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                    <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                      <span className="text-blue-400">👥</span>
+                      Add Group Member
+                    </h3>
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        placeholder="Enter member name..."
+                        className="flex-1 bg-white/10 text-white placeholder-gray-400 border border-white/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const newMember = (e.target as HTMLInputElement).value.trim();
+                            if (newMember) {
+                              handleAddMember(newMember);
+                              (e.target as HTMLInputElement).value = "";
+                            }
+                          }
+                        }}
+                        id="new-member-input"
+                      />
+                      <button
+                        onClick={() => {
+                          const input = document.getElementById("new-member-input") as HTMLInputElement;
+                          const newMember = input.value.trim();
+                          if (newMember) {
+                            handleAddMember(newMember);
+                            input.value = "";
+                          }
+                        }}
+                        className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-6 py-3 rounded-xl hover:scale-105 transition-all duration-200 font-medium shadow-lg hover:shadow-green-400/25"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {groupMembers.length >= 10 && (
+                      <p className="text-yellow-400 text-sm mt-2 flex items-center gap-2">
+                        <span>⚠️</span>
+                        Maximum of 10 members allowed
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-center">
+                    <button
+                      onClick={handleFinalize}
+                      disabled={finalizeDisabled}
+                      className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 ${
+                        finalizeDisabled
+                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          : "bg-gradient-to-r from-green-400 to-blue-500 text-white hover:scale-105 hover:shadow-2xl hover:shadow-green-400/25"
+                      }`}
+                    >
+                      {finalizeDisabled ? "Split Calculated ✓" : "Calculate Split 🧮"}
+                    </button>
+                  </div>
+
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-12 border border-white/20 text-center">
+                  <div className="text-6xl mb-4">📄</div>
+                  <h3 className="text-white text-xl font-semibold mb-2">No Receipt Data</h3>
+                  <p className="text-gray-400">No receipt data is available for this split.</p>
+                </div>
+              )}
+
+            </div>
           </div>
+        </div>
 
-          <button
-            onClick={handleFinalize}
-            className={`text-white px-4 py-2 mt-4 rounded-lg ${
-              finalizeDisabled
-                ? "bg-gray-500 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-600"
-            }`}
-            disabled={finalizeDisabled}
-          >
-            Finalize
-          </button>
-        </>
-      ) : (
-        <p className="text-gray-400">No receipt data available.</p>
-      )}
+        {/* Summary Section */}
+        {showSummary && (
+          <div className="mt-8">
+            <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <FinalizeSummary
+                groupMembers={groupMembers}
+                memberOwedAmounts={memberOwedAmounts}
+              />
+            </div>
+          </div>
+        )}
 
-      {showSummary && (
-        <FinalizeSummary
-          groupMembers={groupMembers}
-          memberOwedAmounts={memberOwedAmounts}
-        />
-      )}
+      </div>
     </div>
   );
 }

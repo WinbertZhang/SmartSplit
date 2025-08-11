@@ -113,34 +113,49 @@ export default function PastSplits() {
   };
 
   return (
-    <div className="flex flex-col items-center relative z-10 mt-20 pt-20 px-4">
-      <div className="text-center text-[2.5rem] leading-none sm:text-6xl tracking-tight font-bold text-white mb-4 relative z-10">
+    <div className="flex flex-col items-center relative z-10 pt-24 px-4 min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div className="text-center text-[2.5rem] leading-none sm:text-6xl tracking-tight font-bold text-white mb-6 relative z-10">
         Past Splits
       </div>
 
       {/* Action buttons for selecting and deleting expenses */}
-      <div className="flex justify-start w-full max-w-screen-lg mx-auto mb-6">
-        {/* Select/Cancel Button */}
-        <button
-          onClick={toggleSelectMode}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mr-4"
-        >
-          {isSelectMode ? "Cancel" : "Select"}
-        </button>
-
-        {/* Trash Button: Only visible when in select mode and at least one expense is selected */}
-        {isSelectMode && selectedExpenses.length > 0 && (
+      <div className="flex flex-wrap justify-between items-center w-full max-w-screen-lg mx-auto mb-8 gap-4">
+        <div className="flex items-center space-x-4">
+          {/* Select/Cancel Button */}
           <button
-            onClick={handleDeleteSelected}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
+            onClick={toggleSelectMode}
+            className={`group relative px-6 py-3 rounded-xl font-medium transition-all duration-300 border ${
+              isSelectMode 
+                ? "bg-red-500/20 border-red-400/50 text-red-400 hover:bg-red-500/30 hover:border-red-400" 
+                : "bg-blue-500/20 border-blue-400/50 text-blue-400 hover:bg-blue-500/30 hover:border-blue-400"
+            }`}
           >
-            <FaTrashAlt className="mr-2" /> Delete
+            <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+              isSelectMode 
+                ? "bg-gradient-to-r from-red-500/20 to-pink-500/20" 
+                : "bg-gradient-to-r from-blue-500/20 to-cyan-500/20"
+            }`}></div>
+            <span className="relative z-10">
+              {isSelectMode ? "Cancel" : "Select"}
+            </span>
           </button>
-        )}
+
+          {/* Trash Button: Only visible when in select mode and at least one expense is selected */}
+          {isSelectMode && selectedExpenses.length > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              className="group relative bg-red-500/20 border border-red-400/50 text-red-400 px-6 py-3 rounded-xl hover:bg-red-500/30 hover:border-red-400 transition-all duration-300 flex items-center space-x-2"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <FaTrashAlt className="relative z-10" />
+              <span className="relative z-10 font-medium">Delete ({selectedExpenses.length})</span>
+            </button>
+          )}
+        </div>
 
         {/* Dropdown to select sort order (Newest/Oldest) */}
-        <div className="ml-auto">
-          <label htmlFor="sortOrder" className="text-white mr-2">
+        <div className="flex items-center space-x-3">
+          <label htmlFor="sortOrder" className="text-white/80 font-medium">
             Sort By:
           </label>
           <select
@@ -149,10 +164,10 @@ export default function PastSplits() {
             onChange={(e) =>
               sortExpenses(e.target.value as "Newest" | "Oldest")
             }
-            className="bg-gray-700 text-white px-2 py-2 rounded-lg"
+            className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all duration-300"
           >
-            <option value="Newest">Newest</option>
-            <option value="Oldest">Oldest</option>
+            <option value="Newest" className="bg-gray-800">Newest</option>
+            <option value="Oldest" className="bg-gray-800">Oldest</option>
           </select>
         </div>
       </div>
@@ -160,65 +175,109 @@ export default function PastSplits() {
       {/* Expenses Display Section */}
       <div className="max-w-screen-lg mx-auto w-full">
         {expenses.length === 0 ? (
-          <p className="text-white text-center">No past splits found.</p> // Show message if no expenses exist
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-12 border border-white/20 text-center">
+            <div className="text-6xl mb-4">📄</div>
+            <h3 className="text-white text-xl font-semibold mb-2">No Past Splits Found</h3>
+            <p className="text-white/60">Upload a receipt to get started with your first split!</p>
+          </div>
         ) : (
           <div
-            className="bg-[#1F2A3D] p-6 rounded-lg shadow-lg"
-            style={{ transition: "height 0.3s ease-in-out" }} // Smooth height transition
+            className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/10"
+            style={{ transition: "height 0.3s ease-in-out" }}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {expenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className={`relative bg-gray-800 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:bg-gray-700 border border-green-400 group ${
-                    isSelectMode ? "cursor-default" : ""
-                  } flex flex-col items-center`}
+                  className={`group relative bg-white/10 backdrop-blur-lg text-white p-6 rounded-2xl shadow-lg cursor-pointer hover:bg-white/20 border border-white/20 hover:border-purple-400/50 transition-all duration-300 flex flex-col items-center ${
+                    isSelectMode ? "cursor-default" : "hover:scale-105"
+                  }`}
                   onClick={() => handleExpenseClick(expense.id!)}
                 >
+                  {/* Hover glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
                   {/* Checkbox for selection (only in select mode) */}
                   {isSelectMode && (
-                    <input
-                      type="checkbox"
-                      className="absolute top-3 left-3 w-5 h-5"
-                      checked={selectedExpenses.includes(expense.id!)}
-                      onChange={() => handleSelectExpense(expense.id!)}
-                    />
+                    <div className="absolute top-4 left-4 z-10">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 rounded border-2 border-white/30 bg-white/10 checked:bg-purple-500 checked:border-purple-500 focus:ring-2 focus:ring-purple-400/50"
+                        checked={selectedExpenses.includes(expense.id!)}
+                        onChange={() => handleSelectExpense(expense.id!)}
+                      />
+                    </div>
                   )}
 
                   {/* Display the date of the expense */}
-                  <p className="text-lg font-semibold mb-2 text-center">
-                    {expense.createdAt instanceof Date
-                      ? expense.createdAt.toLocaleDateString() // Format date if valid
-                      : "Unknown Date"}
-                  </p>
+                  <div className="relative z-10 w-full mb-4">
+                    <p className="text-lg font-semibold text-center bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                      {expense.createdAt instanceof Date
+                        ? expense.createdAt.toLocaleDateString()
+                        : "Unknown Date"}
+                    </p>
+                  </div>
 
                   {/* Display the receipt image if available */}
                   {expense.receiptUrl ? (
-                    <Image
-                      src={expense.receiptUrl}
-                      alt="Receipt"
-                      width={200}
-                      height={200}
-                      className="rounded-lg object-cover w-[200px] h-[200px]"
-                      style={{ objectFit: "cover" }} // Ensure correct image cropping
-                    />
+                    <div className="relative z-10 mb-4 rounded-xl overflow-hidden border border-white/20 shadow-lg">
+                      <Image
+                        src={expense.receiptUrl}
+                        alt="Receipt"
+                        width={200}
+                        height={200}
+                        className="rounded-lg object-cover w-full h-40 group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
                   ) : (
-                    <p className="text-gray-400">No receipt available</p> // Fallback if no image
+                    <div className="relative z-10 mb-4 w-full h-40 bg-white/5 rounded-xl border border-white/20 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-4xl mb-2">📄</div>
+                        <p className="text-white/60 text-sm">No Image</p>
+                      </div>
+                    </div>
                   )}
 
-                  {/* Hover effect to show participants if not in select mode */}
-                  {!isSelectMode && (
-                    <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
-                      <p className="font-bold text-center mb-2">
-                        Participants: {expense.splitDetails.length}
-                      </p>
-                      <ul className="mb-4">
-                        {expense.splitDetails.map((participant) => (
-                          <li key={participant.name} className="text-center">
-                            {participant.name}
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Display total if available */}
+                  {expense.total && (
+                    <div className="relative z-10 w-full mb-4">
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20">
+                        <p className="text-center">
+                          <span className="text-white/60 text-sm">Total: </span>
+                          <span className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                            ${expense.total.toFixed(2)}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Participants section - always visible with expand on hover */}
+                  {!isSelectMode && expense.splitDetails && expense.splitDetails.length > 0 && (
+                    <div className="relative z-20 w-full">
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20 group-hover:bg-white/20 transition-all duration-300">
+                        <p className="text-center text-white/80 text-sm font-medium mb-2">
+                          👥 {expense.splitDetails.length} Participants
+                        </p>
+                        
+                        {/* Expanded participant list on hover */}
+                        <div className="max-h-0 overflow-hidden group-hover:max-h-32 transition-all duration-300 ease-in-out">
+                          <div className="space-y-1 pt-2 border-t border-white/20">
+                            {expense.splitDetails.map((participant, index) => (
+                              <div key={participant.name} className="flex items-center justify-center space-x-2 text-xs">
+                                <div 
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ 
+                                    backgroundColor: ["#f3e79b", "#fac484", "#f8a07e", "#eb7f86", "#ce6693", "#a059a0", "#5c53a5"][index % 7]
+                                  }}
+                                ></div>
+                                <span className="text-white/90">{participant.name}</span>
+                                <span className="text-white/60">${participant.amount?.toFixed(2) || '0.00'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

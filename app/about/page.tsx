@@ -6,7 +6,7 @@ import { FaLinkedin, FaGithub } from 'react-icons/fa';
 
 const AboutPage = () => {
   return (
-    <div className="flex flex-col items-center mt-20 py-20 px-4 relative z-10">
+    <div className="flex flex-col items-center pt-24 py-20 px-4 relative z-10 min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <div className="flex flex-col items-center text-center max-w-screen-md mx-auto space-y-12">
         <h1 className="text-white text-4xl sm:text-5xl font-bold tracking-tight">
           About Smart Split

@@ -22,7 +22,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center relative z-10 mt-20 pt-20">
+    <div className="flex flex-col items-center relative z-10 pt-24 min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       {/* Dashboard Header */}
       <div className="text-center text-[2.5rem] leading-none sm:text-6xl tracking-tight font-bold text-white mb-4 relative z-10">
         Dashboard

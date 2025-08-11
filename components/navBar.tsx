@@ -46,97 +46,123 @@ export default function NavBar() {
   };
 
   return (
-    <header className="fixed w-full p-2 bg-transparent backdrop-blur-md border-b border-gray-600 z-50">
-      <div className="flex justify-between items-center max-w-screen-xl mx-auto h-[60px] px-4">
+    <header className="fixed w-full top-0 z-50 bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-blue-900/20 to-indigo-900/20"></div>
+      <div className="relative flex justify-between items-center max-w-screen-xl mx-auto h-[70px] px-6">
         {/* Logo on the far left */}
         <div className="flex items-center flex-shrink-0">
-          <Link href="/">
-            <Image
-              alt="logo"
-              src="/smartsplitlogotext.png"
-              width={100}
-              height={100}
-              className=""
-            />
+          <Link href="/" className="group">
+            <div className="relative">
+              <Image
+                alt="logo"
+                src="/smartsplitlogotext.png"
+                width={120}
+                height={120}
+                className="transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-blue-400/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-lg"></div>
+            </div>
           </Link>
         </div>
 
-        {/* Hamburger Icon for Mobile and Navigation Links */}
+        {/* Hamburger Icon for Mobile */}
         <div className="lg:hidden">
           <button
             onClick={toggleMenu}
-            className="text-white focus:outline-none"
+            className="text-white p-2 rounded-lg bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400/50"
           >
-            {isMenuOpen ? <FiX size={28} /> : <FiMenu size={28} />}
+            <div className="relative">
+              {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+            </div>
           </button>
         </div>
 
-        {/* Navigation Links (visible on desktop, hidden on mobile) */}
-        <nav className="hidden lg:flex items-center space-x-8">
+        {/* Navigation Links (visible on desktop) */}
+        <nav className="hidden lg:flex items-center space-x-1">
           {navLinks.map((link) => (
-            <li
+            <Link
               key={link.href}
-              className="text-white text-md tracking-wider hover:text-green-400 transition-all list-none"
+              href={link.href}
+              className="relative group px-4 py-2 rounded-lg text-white/90 text-sm font-medium tracking-wide hover:text-white transition-all duration-300"
             >
-              <Link href={link.href}>{link.name}</Link>
-            </li>
+              <span className="relative z-10">{link.name}</span>
+              <div className="absolute inset-0 bg-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm"></div>
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-purple-400 to-blue-400 group-hover:w-3/4 transition-all duration-300"></div>
+            </Link>
           ))}
         </nav>
 
-        {/* User Info / Sign-In Button (visible on desktop, hidden on mobile) */}
+        {/* User Info / Sign-In Button (visible on desktop) */}
         <div className="hidden lg:flex items-center space-x-4">
-          <div className="w-[1px] h-10 bg-gray-600"></div>
+          <div className="w-[1px] h-8 bg-white/20"></div>
 
-          <div className="text-green-400 text-md tracking-wider flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
-                <p>Welcome, {user.displayName?.split(" ")[0]}!</p>{" "}
-                {/* Display first name */}
+                <div className="text-white/90 text-sm font-medium">
+                  <span className="text-white/60">Welcome, </span>
+                  <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent font-semibold">
+                    {user.displayName?.split(" ")[0]}!
+                  </span>
+                </div>
                 <button
                   onClick={handleSignOut}
-                  className="bg-[#212C40] text-green-400 px-4 py-2 rounded-lg hover:bg-[#1A2535] flex items-center transition-colors duration-200"
+                  className="group relative px-4 py-2 bg-white/10 backdrop-blur-md text-white rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center border border-white/20 hover:border-purple-400/50"
                 >
-                  <FiLogOut className="mr-2" /> {/* Icon for logging out */}
-                  Sign Out
+                  <FiLogOut className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                  <span className="text-sm font-medium">Sign Out</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </button>
               </div>
             ) : (
-              <SignInButton />
+              <div className="relative">
+                <SignInButton />
+              </div>
             )}
           </div>
         </div>
 
-        {/* Mobile Menu (hidden on desktop, shown on mobile when menu is open) */}
+        {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden absolute top-[60px] left-0 w-full bg-gray-900 text-white p-4 shadow-md z-40">
-            <ul className="flex flex-col items-center space-y-4">
-              {navLinks.map((link) => (
-                <li
-                  key={link.href}
-                  className="text-white text-md tracking-wider hover:text-green-400 transition-all"
-                >
-                  <Link href={link.href} onClick={toggleMenu}>
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-              <div className="w-full h-[1px] bg-gray-600 my-2"></div>
+          <div className="lg:hidden absolute top-[70px] left-0 w-full bg-black/40 backdrop-blur-xl border-b border-white/10 shadow-2xl z-40">
+            <div className="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-blue-900/30 to-indigo-900/30"></div>
+            <div className="relative p-6">
+              <ul className="flex flex-col items-center space-y-4">
+                {navLinks.map((link) => (
+                  <li key={link.href} className="w-full">
+                    <Link
+                      href={link.href}
+                      onClick={toggleMenu}
+                      className="block w-full text-center py-3 px-4 rounded-lg text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 border border-transparent hover:border-white/20"
+                    >
+                      <span className="font-medium tracking-wide">{link.name}</span>
+                    </Link>
+                  </li>
+                ))}
+                
+                <div className="w-full h-[1px] bg-white/20 my-4"></div>
 
-              {/* Show Sign In/Out in mobile view */}
-              <div className="text-center">
-                {user ? (
-                  <button
-                    onClick={handleSignOut}
-                    className="bg-[#212C40] text-green-400 px-4 py-2 rounded-lg hover:bg-[#1A2535] flex items-center justify-center transition-colors duration-200"
-                  >
-                    <FiLogOut className="mr-2" />
-                    Sign Out
-                  </button>
-                ) : (
-                  <SignInButton />
-                )}
-              </div>
-            </ul>
+                {/* Mobile Sign In/Out */}
+                <div className="w-full flex justify-center">
+                  {user ? (
+                    <div className="text-center space-y-3">
+                      <p className="text-white/80 text-sm">
+                        Welcome, <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent font-semibold">{user.displayName?.split(" ")[0]}!</span>
+                      </p>
+                      <button
+                        onClick={handleSignOut}
+                        className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center justify-center border border-white/20 hover:border-purple-400/50"
+                      >
+                        <FiLogOut className="mr-2" />
+                        <span className="font-medium">Sign Out</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <SignInButton />
+                  )}
+                </div>
+              </ul>
+            </div>
           </div>
         )}
       </div>
