@@ -24,6 +24,7 @@ export default function ReceiptPage() {
   const [loading, setLoading] = useState(false);
   const [manualEntryMode, setManualEntryMode] = useState(false);
   const [user, setUser] = useState<any>(null); // <-- New local state to hold the user or null
+  const [isDragOver, setIsDragOver] = useState(false);
   const router = useRouter();
   const auth = getAuth();
 
@@ -39,6 +40,32 @@ export default function ReceiptPage() {
     });
     return () => unsubscribe();
   }, [auth]);
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        handleImageUpload(file);
+      } else {
+        alert('Please upload an image file');
+      }
+    }
+  };
 
   const handleImageUpload = async (uploadedImage: File) => {
     setImageURL(URL.createObjectURL(uploadedImage));
@@ -309,24 +336,41 @@ export default function ReceiptPage() {
       <div className="max-w-2xl sm:max-w-4xl mx-auto bg-white/10 backdrop-blur-lg p-8 rounded-xl shadow-lg border border-white/20">
         {!loading && !receiptData && !manualEntryMode && (
           <div className="my-6">
-            <div className="flex justify-center">
+            <div 
+              className="flex justify-center"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <button
-                className="group relative bg-white/10 backdrop-blur-lg text-white p-8 sm:p-10 rounded-2xl shadow-2xl text-center hover:bg-white/20 transition-all duration-300 flex flex-col items-center justify-center border-2 border-dashed border-white/30 hover:border-purple-400/50 min-w-[280px]"
+                className={`group relative backdrop-blur-lg text-white p-8 sm:p-10 rounded-2xl shadow-2xl text-center transition-all duration-300 flex flex-col items-center justify-center border-2 border-dashed min-w-[280px] ${
+                  isDragOver 
+                    ? 'bg-purple-500/30 border-purple-400 scale-105' 
+                    : 'bg-white/10 border-white/30 hover:bg-white/20 hover:border-purple-400/50'
+                }`}
                 onClick={() => document.getElementById("file-input")?.click()}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <FaReceipt className="relative z-10 text-white/70 group-hover:text-white text-4xl sm:text-6xl mb-4 transition-all duration-300 group-hover:scale-110" />
+                <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 ${
+                  isDragOver 
+                    ? 'bg-gradient-to-r from-purple-500/40 to-blue-500/40 opacity-100'
+                    : 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100'
+                }`}></div>
+                <FaReceipt className={`relative z-10 text-4xl sm:text-6xl mb-4 transition-all duration-300 ${
+                  isDragOver 
+                    ? 'text-white scale-125' 
+                    : 'text-white/70 group-hover:text-white group-hover:scale-110'
+                }`} />
                 <span className="relative z-10 text-lg sm:text-xl font-semibold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-                  Upload Receipt
+                  {isDragOver ? 'Drop your receipt here!' : 'Upload Receipt'}
                 </span>
                 <span className="relative z-10 text-sm text-white/60 mt-2">
-                  Click or drag to upload
+                  {isDragOver ? 'Release to upload' : 'Click or drag to upload'}
                 </span>
               </button>
               <input
                 id="file-input"
                 type="file"
-                accept="image/"
+                accept="image/*"
                 onChange={(e) =>
                   e.target.files && handleImageUpload(e.target.files[0])
                 }
